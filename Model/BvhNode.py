@@ -22,7 +22,6 @@ class BvhNode():
         self.children = []
         
         self.offset = []
-        # self.offsetMatrix = None
         self.channels = []
 
         self.idx = 0

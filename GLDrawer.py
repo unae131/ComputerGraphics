@@ -1,19 +1,17 @@
+from Camera import *
 from BvhParser import *
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import os
 import glfw
+from Camera import *
 
 class GLDrawer():
     def __init__(self, fileName):
         self.skeleton, self.motion = readBVHfile(fileName)
+        self.camera = Camera()
         self.curFrame = 0
-        
-        self.zoom = 5
-        self.orbitM = np.eye(4)
-        self.panM = np.eye(4)
-        self.camM = np.eye(4)
         
         self.fill = True
         self.playing = True
@@ -257,21 +255,15 @@ class GLDrawer():
         self.curFrame = frame
         self.playing = False
 
-    def setCamera(self):
+    def setCamera(self, fovy = 120, aspect = 1, zNear = 1, zFar = 50):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(120, 1, 1, 50)
+        gluPerspective(fovy, aspect, zNear, zFar)
         
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        gluLookAt(0,0,self.zoom,0,0,0,0,1,0)
-        
-        self.camM = self.orbitM @ self.panM @ self.camM
 
-        self.orbitM = np.identity(4)
-        self.panM = np.identity(4)
-
-        glMultMatrixf(self.camM.T)
+        glMultMatrixf(self.camera.matrix.T)
 
     def setLighting(self):
         # lighting
@@ -317,18 +309,7 @@ class GLDrawer():
         glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
         glColor3ub(255, 255, 255) # glColor*() is ignored if lighting is enabled
 
-    def zoomIn(self):
-        self.zoom -= 0.5
-    
-    def zoomOut(self):
-        self.zoom += 0.5
-
     def render(self):
-        orbitM = self.orbitM
-        panM = self.panM
-        camM = self.camM
-        zoom = self.zoom
-
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
