@@ -1,14 +1,13 @@
-from BvhModel import *
+from BvhParser import *
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import os
 import glfw
 
-class BVHController():
-    def __init__(self):
-        self.skeleton = None
-        self.motion = None
+class GLDrawer():
+    def __init__(self, fileName):
+        self.skeleton, self.motion = readBVHfile(fileName)
         self.curFrame = 0
         
         self.zoom = 5
@@ -18,152 +17,6 @@ class BVHController():
         
         self.fill = True
         self.playing = True
-
-    def readBVHfile (self, fileName):
-        HIERARCHY = "HIERARCHY"
-        OFFSET = "OFFSET"
-        CHANNELS = "CHANNELS"
-        JOINT_OR_END_SITE = "JOINT_OR_END"
-        JOINT_OR_END_OR_RBRACE = "JOINT_OR_END_OR_RBRACE"
-        LBRACE = "{"
-        RBRACE = "}"
-        MOTION = "MOTION"
-        FRAMES = "FRAMES"
-        FRAME_TIME = "FRAME TIME"
-
-        try:
-            f = open(fileName, 'r')
-
-            read = True
-            nextStr = HIERARCHY
-            curNode = None
-            brace = 0
-
-            while True:
-                if read:
-                    print(nextStr)
-                    line = f.readline()
-
-                    if not line:
-                        break
-
-                    line = line.strip()
-
-                    if line == "":
-                        continue
-                
-                if nextStr == HIERARCHY and line.upper() == nextStr:
-                    nextStr = BvhNode.TYPE_ROOT
-                    continue
-                
-                elif nextStr == BvhNode.TYPE_ROOT and line.upper().split()[0].strip() == nextStr:
-                    nextStr = LBRACE
-                    self.skeleton = Skeleton()
-                    self.skeleton.addNode(BvhNode.TYPE_ROOT, line[len(BvhNode.TYPE_ROOT):].strip())
-                    curNode = self.skeleton.getRoot()
-                    continue
-
-                elif nextStr == BvhNode.TYPE_JOINT and line.upper().split()[0].strip() == nextStr:
-                    nextStr = LBRACE
-                    name = line[len(BvhNode.TYPE_JOINT):].strip()
-                    curNode = self.skeleton.addNode(BvhNode.TYPE_JOINT, name, curNode)
-                    read = True
-                    continue
-
-                elif nextStr == BvhNode.TYPE_END_SITE and line.upper()[:8] == nextStr:
-                    nextStr = LBRACE
-                    curNode = self.skeleton.addNode(BvhNode.TYPE_END_SITE, "", curNode)
-                    read = True
-                    continue
-
-                elif nextStr == LBRACE and line == nextStr:
-                    nextStr = OFFSET
-                    brace += 1
-                    continue
-
-                elif nextStr == OFFSET and line.split()[0].upper().strip() == nextStr:
-                    if curNode.type == BvhNode.TYPE_END_SITE:
-                        nextStr = RBRACE
-                    else:
-                        nextStr = CHANNELS
-
-                    offset = line[len(OFFSET):].strip().split()
-                    offset = list(map(float, offset))
-                    curNode.setOffset(offset)
-                    continue
-
-                elif nextStr == CHANNELS and line.upper().split()[0] == nextStr:
-                    nextStr = JOINT_OR_END_SITE
-
-                    words = line.upper().split()
-                    numOfChannels = int(words[1].strip())
-                    channels = words[2: 2+ numOfChannels]
-
-                    curNode.setChannels(channels)
-                    continue
-
-                elif nextStr == JOINT_OR_END_SITE:
-                    if line.split()[0].upper() == BvhNode.TYPE_JOINT:
-                        nextStr = BvhNode.TYPE_JOINT
-
-                    elif line.upper()[:8] == BvhNode.TYPE_END_SITE:
-                        nextStr = BvhNode.TYPE_END_SITE
-
-                    else:
-                        raise Exception
-
-                    read = False
-                    continue
-                    
-                elif nextStr == RBRACE and line == nextStr:
-                    brace -= 1
-
-                    if brace == 0:
-                        nextStr = MOTION
-                    else:
-                        nextStr = JOINT_OR_END_OR_RBRACE
-
-                    curNode = curNode.getParent()
-                    read = True
-
-                elif nextStr == JOINT_OR_END_OR_RBRACE:
-                    read = False
-                    if line == RBRACE:
-                        nextStr = RBRACE
-
-                    else:
-                        nextStr = JOINT_OR_END_SITE
-                    
-                    continue
-
-                elif nextStr == MOTION and line.upper() == nextStr:
-                    nextStr = FRAMES
-                    self.motion = Motion(self.skeleton)
-                    continue
-
-                elif nextStr == FRAMES and line[:6].upper() == nextStr:
-                    # print(line)
-                    # print("Frames",int(line[6:].split()[-1]))
-                    self.motion.setFrames(int(line[6:].split()[-1]))
-                    nextStr = FRAME_TIME
-                    continue
-
-                elif nextStr == FRAME_TIME and line[:10].upper() == "FRAME TIME" :
-                    self.motion.setFrameTime(float(line[10:].split()[-1]))
-                    nextStr = "DATA"
-                    continue
-
-                elif nextStr == "DATA":
-                    data = list(map(float, line.split()))
-                    self.motion.setNextPosture(data)
-                    continue
-
-                else:
-                    raise Exception("This is not a bvh file.(Error in \""+nextStr+"\")")
-
-            self.skeleton.printHierarchy(self.skeleton.getRoot())
-        except Exception as e:
-            print(e) 
 
     def drawLine(self, offset):
         glBegin(GL_LINES)
@@ -350,39 +203,6 @@ class BVHController():
 
         glPopMatrix()
 
-    """def drawBodyNode(self, posture, node):
-        for n in node.children:
-            self.drawBox(n.offset)
-
-            if n.type == n.TYPE_END_SITE:
-                return
-
-            glPushMatrix()
-
-            # L = np.eye(4)
-            # L[:3,3] = n.offset
-
-            L = posture.getLinkMatrix(n)
-            # print(L)
-            glMultMatrixf(L.T)
-            glPushMatrix()
-
-            J = posture.getJointTransMatrix(n)
-            # J0 = posture.getChannelmatrix(node.channels[0], posture.data[node.chIdx])
-            # J1 = posture.getChannelmatrix(node.channels[1], posture.data[node.chIdx+1])
-            # J2 = posture.getChannelmatrix(node.channels[2], posture.data[node.chIdx+2])
-            
-            # J = J2 @ J1 @ J0
-            # J = J0 @ J1 @ J2
-
-            glMultMatrixf(J.T)
-
-            self.drawBodyNode(posture, n)
-
-            glPopMatrix()
-
-            glPopMatrix()
-    """
     def drawBodyNode(self, posture, node):
         if node.type == node.TYPE_END_SITE:
             return
@@ -438,7 +258,6 @@ class BVHController():
         self.playing = False
 
     def setCamera(self):
-
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(120, 1, 1, 50)
@@ -538,46 +357,3 @@ class BVHController():
         glPopMatrix()
 
         self.unsetLighting()
-
-# def main():
-#     viewer = BVHController()
-#     viewer.readBVHfile("sample-walk.bvh")
-#     viewer.skeleton.printHierarchy(viewer.skeleton.getRoot())
-#     print(viewer.motion)
-#     viewer.render()
-
-def main():
-    global gFrameTime
-    viewer = BVHController()
-    viewer.readBVHfile("sample-walk.bvh")
-    viewer.skeleton.printHierarchy(viewer.skeleton.getRoot())
-    # print(viewer.motion)
-    # viewer.render
-
-    if not glfw.init():
-        return
-    
-    window = glfw.create_window(640, 640, "2017030064-class3", None, None)
-    if not window:
-        glfw.terminate()
-        return
-
-    glfw.make_context_current(window)
-
-    # glfw.set_cursor_pos_callback(window, cursor_callback)
-    # glfw.set_mouse_button_callback(window, button_callback)
-    # glfw.set_scroll_callback(window, scroll_callback)
-    # glfw.set_drop_callback(window, drop_callback)
-    # glfw.set_key_callback(window, key_callback)
-
-
-    while not glfw.window_should_close(window):
-        glfw.swap_interval(1)#gFrameTime)
-        glfw.poll_events()
-        viewer.render()
-        glfw.swap_buffers(window)
-    glfw.terminate()
-
-
-if __name__ == "__main__":
-    main()
