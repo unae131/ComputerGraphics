@@ -32,7 +32,7 @@ class Ui_MainWindow(object):
         self.pushButton.clicked.connect(self.openGLWidget.glDrawer.switchPlaying)
 
         self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
-        self.radioButton.setGeometry(QtCore.QRect(210, 410, 100, 20))
+        self.radioButton.setGeometry(QtCore.QRect(400, 407, 100, 20))
         self.radioButton.setObjectName("radioButton")
         self.radioButton.setChecked(False)
         self.radioButton.clicked.connect(self.on_toggle_mode)
@@ -46,6 +46,21 @@ class Ui_MainWindow(object):
         self.zoomOutButton.setGeometry(QtCore.QRect(670, 400, 33, 30))
         self.zoomOutButton.setObjectName("zoomOutButton")
         self.zoomOutButton.clicked.connect(self.zoomOut_callback)
+
+        self.xyzLineEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.xyzLineEdit.setObjectName("xyzLineEdit")
+        self.xyzLineEdit.setGeometry(QtCore.QRect(210, 407, 70, 20))
+        self.xyzLineEdit.textChanged.connect(self.onXYZChanged)
+
+        self.xyzBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.xyzBtn.setObjectName("xyzBtn")
+        self.xyzBtn.setGeometry(QtCore.QRect(285, 402, 50, 30))
+        self.xyzBtn.clicked.connect(self.onXYZClicked)
+
+        self.limbIKBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.limbIKBtn.setObjectName("limbIKBtn")
+        self.limbIKBtn.setGeometry(QtCore.QRect(330, 402, 50, 30))
+        self.limbIKBtn.clicked.connect(self.onIKClicked)
 
         self.widget = QtWidgets.QWidget(self.centralwidget)
         self.widget.setGeometry(QtCore.QRect(10, 400, 193, 33))
@@ -84,6 +99,9 @@ class Ui_MainWindow(object):
         self.pushButton_3.setText(_translate("MainWindow", "이동"))
         self.zoomInButton.setText(_translate("MainWindow", "+"))
         self.zoomOutButton.setText(_translate("MainWindow", "-"))
+        self.xyzLineEdit.setText(_translate("MainWindow", "0, 0, 0"))
+        self.xyzBtn.setText(_translate("MainWindow", "타겟"))
+        self.limbIKBtn.setText(_translate("MainWindow", "이동"))
 
     def updateLabel(self, value):
         self.openGLWidget.glDrawer.curFrame = value
@@ -97,8 +115,19 @@ class Ui_MainWindow(object):
     def onChanged(self, frame):
         self.lineEdit.setText(frame)
 
+    def onXYZChanged(self, frame):
+        self.xyzLineEdit.setText(frame)
+
     def onClicked(self, frame):
         self.openGLWidget.glDrawer.curFrame = int(self.lineEdit.text())
+
+    def onXYZClicked(self, frame):
+        target = [float(s) for s in self.xyzLineEdit.text().split(", ")]
+        self.openGLWidget.glDrawer.setTargetPos(target)
+
+    def onIKClicked(self, frame):
+        targetJoint= self.openGLWidget.glDrawer.targetJoint
+        self.openGLWidget.glDrawer.limbIK(targetJoint.parent, targetJoint)
 
     def zoomIn_callback(self):
         self.openGLWidget.glDrawer.camera.zoom(0.5)

@@ -1,4 +1,5 @@
 import numpy as np
+from Matrix import *
 
 class Camera():
     def __init__(self, eye = [0.,-3.,5.], center = [0.,0.,0.], up = [0.,1.,0.]):
@@ -7,10 +8,10 @@ class Camera():
         up = np.array(up,dtype=np.float32)
 
         forward = eye - center
-        forward = self.normalize(forward)
+        forward = vecNormalize(forward)
 
         side = np.cross(up, forward)
-        side = self.normalize(side)
+        side = vecNormalize(side)
 
         up = np.cross(forward, side)
 
@@ -57,9 +58,3 @@ class Camera():
                       [0.,0.,0.,1.]])
 
         self.matrix = T @ self.matrix
-
-    def normalize(self, v):
-        norm = np.linalg.norm(v)
-        if norm == 0: 
-            return v
-        return v / norm

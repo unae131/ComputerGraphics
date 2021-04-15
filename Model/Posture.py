@@ -1,4 +1,5 @@
 import numpy as np
+from Matrix import *
 from Model.BvhNode import BvhNode
 
 class Posture():
@@ -7,6 +8,34 @@ class Posture():
         self.data = data
         self.jointTransMatrices = np.full(len(skeleton.hierarchy), None)
         self.linkTransMatrices = np.full(len(skeleton.hierarchy), None)
+        self.totalTransMatrices = np.full(len(skeleton.hierarchy), None)
+    
+    def getTotalTransMatrix(self, node):
+        idx = node.idx
+
+        if self.totalTransMatrices[idx] is None:
+            M = np.eye(4, dtype=np.float)
+            
+            while node is not None:
+                M = self.getLinkMatrix(node) @ self.getJointTransMatrix(node) @ M
+                node = node.parent
+
+            self.totalTransMatrices[idx] = M
+
+        return self.totalTransMatrices[idx]
+
+    def setJointTransMatrix(self, node, M):
+        if node.type == node.TYPE_ROOT:
+            M = self.getRootTransMatrix() @ M
+        self.jointTransMatrices[node.idx] = M
+        self.initTotalTransMatrix(node)
+
+    def initTotalTransMatrix(self, node, M = None):
+        self.totalTransMatrices[node.idx] = M
+
+        if node.type != node.TYPE_END_SITE:
+            for n in node.children:
+                self.initTotalTransMatrix(n)
 
     def getJointTransMatrix(self, node):
         if node.type == node.TYPE_END_SITE:
@@ -26,6 +55,7 @@ class Posture():
                 i+=1
 
             if node.type == node.TYPE_ROOT:
+                self.rootOrientMatrix = M
                 M = self.getRootTransMatrix() @ M
 
             self.jointTransMatrices[idx] = M
@@ -53,61 +83,22 @@ class Posture():
 
     def getChannelmatrix(self, channel, value):
         if channel == BvhNode.CH_XROTATION:
-            return self.getXRotMatrix(value)
+            return getXRotMatrix(value)
 
         elif channel == BvhNode.CH_YROTATION:
-            return self.getYRotMatrix(value)
+            return getYRotMatrix(value)
 
         elif channel == BvhNode.CH_ZROTATION:
-            return self.getZRotMatrix(value)
+            return getZRotMatrix(value)
 
         elif channel == BvhNode.CH_XPOSITION:
-            return self.getXTransMatrix(value)
+            return getTransMatrix(value,0,0)
 
         elif channel == BvhNode.CH_YPOSITION:
-            return self.getYTransMatrix(value)
+            return getTransMatrix(0,value,0)
         
         elif channel == BvhNode.CH_ZPOSITION:
-            return self.getZTransMatrix(value)
+            return getTransMatrix(0,0,value)
 
         else:
             raise Exception("Wrong Channels")
-
-    def getXTransMatrix(self, x):
-        T = np.eye(4)
-        T[0][3] = x
-        return T
-
-    def getYTransMatrix(self, y):
-        T = np.eye(4)
-        T[1][3] = y
-        return T
-
-    def getZTransMatrix(self, z):
-        T = np.eye(4)
-        T[2][3] = z
-        return T
-
-    def getXRotMatrix(self, angle): # degree
-        R = np.eye(4)
-        angle = angle*np.pi/180
-        R[1][1] = R[2][2] = np.cos(angle)
-        R[2][1] = np.sin(angle)
-        R[1][2] = - R[2][1]
-        return R
-
-    def getYRotMatrix(self, angle): # degree
-        R = np.eye(4)
-        angle = angle*np.pi/180
-        R[0][0] = R[2][2] = np.cos(angle)
-        R[0][2] = np.sin(angle)
-        R[2][0] = - R[0][2]
-        return R
-    
-    def getZRotMatrix(self, angle): # degree
-        R = np.eye(4)
-        angle = angle*np.pi/180
-        R[0][0] = R[1][1] = np.cos(angle)
-        R[1][0] = np.sin(angle)
-        R[0][1] = - R[1][0]
-        return R
