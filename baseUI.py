@@ -1,4 +1,4 @@
-from QtViewer import *
+from QtGlViewer import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_MainWindow(object):
