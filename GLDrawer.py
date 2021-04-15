@@ -1,20 +1,31 @@
 from Camera import *
 from BvhParser import *
+from Matrix import *
+
+import math
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import os
-import glfw
-from Camera import *
 
-class GLDrawer():
-    def __init__(self, fileName):
+class GlDrawer():
+    def __init__(self, fileName, kinematics = False,targetJointIdx = 0, targetPos = [0,0,0]):
         self.skeleton, self.motion = readBVHfile(fileName)
         self.camera = Camera()
         self.curFrame = 0
         
         self.fill = True
         self.playing = False
+
+        self.kinematics = kinematics
+        self.kine_skel, self.kine_mot = readBVHfile(fileName)
+
+        if targetJointIdx < 0 or targetJointIdx >= len(self.kine_skel.hierarchy):
+            self.targetJointIdx = 0
+        else:
+            self.targetJointIdx = targetJointIdx
+
+        self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
+        self.targetPos = targetPos
 
     def createVertexArraySeparate(self, size,r):
         varr = np.array([
@@ -119,7 +130,7 @@ class GLDrawer():
     def drawBoxGlobal(self, x, y, z):
         glPushMatrix()
         glTranslatef(x,y,z)
-        glScalef(0.2,0.2,0.2)
+        glScalef(0.08,0.08,0.08)
         point1 = [0.5, 0.5, -0.5]
         point2 = [0.5, 0.5, 0.5]
         point3 = [0.5, -0.5, 0.5]
@@ -224,9 +235,9 @@ class GLDrawer():
 
         glPopMatrix()
 
-    def drawBody(self):
-        posture = self.motion.getPosture(self.curFrame)
-        root = self.skeleton.getRoot()
+    def drawBody(self, skeleton, motion):
+        posture = motion.getPosture(self.curFrame)
+        root = skeleton.getRoot()
 
         # draw root
         glPushMatrix()
@@ -271,15 +282,10 @@ class GLDrawer():
     def switchPlaying(self):
         self.playing = not self.playing
 
-    def setViewport(self, fovy = 120, aspect = 1, zNear = 1, zFar = 50):
+    def setViewPort(self, fovy = 120, aspect = 1, zNear = 1, zFar = 50):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(fovy, aspect, zNear, zFar)
-        
-        # glMatrixMode(GL_MODELVIEW)
-        # glLoadIdentity()
-
-        # glMultMatrixf(self.camera.matrix.T)
 
     def setLighting(self):
         # lighting
@@ -334,8 +340,9 @@ class GLDrawer():
         else:
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
 
-        self.setViewport()
+        self.setViewPort()
 
+        # camera
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         glMultMatrixf(self.camera.matrix.T)
@@ -347,51 +354,65 @@ class GLDrawer():
             self.setLighting()
 
         # draw bvhFile
-        glPushMatrix()
-        self.setObjectColor(255,0,0)
-        
-        if self.skeleton != None:
-            self.drawBody()
-            if self.playing:
-                self.curFrame += 1
-                self.curFrame %= self.motion.frames
-        glPopMatrix()
+        if self.skeleton is not None:
+            glPushMatrix()
+            self.setObjectColor(255,0,0)
+            self.drawBody(self.skeleton, self.motion)
+
+            glPopMatrix()
 
         if lighting:
             self.unsetLighting()
 
         # kinematics
-        glPushMatrix()
-        self.setObjectColor(0,255,0)
-        self.drawJointVelocity(2)
-        glPopMatrix()
+        if self.kinematics:
+            glPushMatrix()
+            self.setObjectColor(255, 255,0)
+            self.drawBoxGlobal(self.targetPos[0],self.targetPos[1],self.targetPos[2])
 
-    def getGlobalPosition(self, nodeIdx, frame = -1):
-        if self.skeleton == None:
-            return None
-        
-        if nodeIdx >= len(self.skeleton.hierarchy):
-            return None
+            self.setObjectColor(0,255,0)
+            
+            # fk
+            self.drawJointVelocity(self.skeleton, self.motion, self.targetJointIdx)
+            self.drawBody(self.kine_skel, self.kine_mot)
 
-        node = self.skeleton.hierarchy[nodeIdx]
+            glPopMatrix()
 
-        if node.type == BvhNode.TYPE_END_SITE:
-            return None
+        if self.skeleton is not None and self.playing:
+            self.curFrame += 1
+            self.curFrame %= self.motion.frames
+
+    def setTargetPos(self, targetPos):
+        self.targetPos = np.array(targetPos, dtype = np.float64)
+
+    def setTargetJoint(self, idx):
+        self.targetJointIdx = idx
+
+    def getGlobalPosition(self, skeleton, motion, nodeIdx, frame = -1):        
+        node = skeleton.hierarchy[nodeIdx]
 
         if frame == -1:
             frame = self.curFrame
         
-        posture = self.motion.postures[frame]
+        posture = motion.postures[frame]
+        p = posture.getTotalTransMatrix(node) @ np.array([0,0,0,1], dtype=np.float64)
+        return p[:3]
 
-        p = np.array([0., 0., 0., 1.], dtype=np.float64)
+    def getGlobalOrientation(self, motion, node, frame = -1):
+        if frame == -1:
+            frame = self.curFrame
+
+        posture = motion.postures[frame]
+        R = np.eye(4, dtype=np.float64)
 
         while node.type != BvhNode.TYPE_ROOT:
-            p = posture.getLinkMatrix(node) @ posture.getJointTransMatrix(node) @ p
+            R = posture.getJointTransMatrix(node) @ R
             node = node.parent
 
-        p = posture.getJointTransMatrix(node) @ p
+        posture.getJointTransMatrix(node)
+        R = posture.rootOrientMatrix @ R
 
-        return p[:3]
+        return R
 
     def getLinearVelocity(self, p0, p1, time):
         v = np.array(p1) - np.array(p0)
@@ -399,17 +420,150 @@ class GLDrawer():
 
         return v
 
-    def drawJointVelocity(self, nodeIdx):
-        curP = self.getGlobalPosition(nodeIdx)
+    def drawJointVelocity(self, skeleton, motion, nodeIdx):
+        curP = self.getGlobalPosition(skeleton, motion, nodeIdx)
 
         if curP is None or self.curFrame == 0:
             return
 
-        lastP = self.getGlobalPosition(nodeIdx, frame = self.curFrame - 1)
-
-        v = self.getLinearVelocity(lastP, curP, self.motion.frame_time)
-
+        lastP = self.getGlobalPosition(skeleton, motion, nodeIdx, frame = self.curFrame - 1)
+        v = self.getLinearVelocity(lastP, curP, motion.frame_time)
         self.drawLineGlobal(curP, curP + v)
+
+    def limbIK(self, mid, end): # global target_pos
+        skeleton = self.kine_skel
+        motion = self.kine_mot
+        target_pos = self.targetPos
+
+        if mid is None:
+            self.done = True
+            return
+
+        t = np.array(target_pos, dtype=np.float64)
+        posture = motion.getPosture(self.curFrame)
+        
+        if mid.parent is None:
+            b = self.getGlobalPosition(skeleton, motion, mid.idx)
+            c = self.getGlobalPosition(skeleton, motion, end.idx)
+
+            bc = np.linalg.norm(b-c)
+            bt = np.linalg.norm(t-b)
+            ct = np.linalg.norm(t-c)
+
+            angCBT = getAngle(bc,bt,ct)[2]
+
+            glob_midOrien = self.getGlobalOrientation(motion, mid)
+            u = vecNormalize(np.cross(c-b,t-b))
+            R_diff_mid = getRotMatrix(b, u, angCBT)
+            glob_midOrien = R_diff_mid @ glob_midOrien
+            
+            M = posture.getTotalTransMatrix(mid)
+            M = np.linalg.inv([M])[0]
+            local_midOrien = M @ glob_midOrien
+            posture.setJointTransMatrix(mid, local_midOrien)
+
+            return
+
+        base = mid.parent
+
+        a = self.getGlobalPosition(skeleton, motion, base.idx)
+        b = self.getGlobalPosition(skeleton, motion, mid.idx)
+        c = self.getGlobalPosition(skeleton, motion, end.idx)
+
+        ab = np.linalg.norm(a-b)
+        bc = np.linalg.norm(b-c)
+        ac = np.linalg.norm(c-a)
+        ac1 = np.linalg.norm(t-a)
+
+        if ac1 >= ab + bc: # 일직선으로 펴주기
+            # base
+            bt = np.linalg.norm(t-b)
+            angBAT = getAngle(ab,ac1,bt)[2]
+
+            glob_baseOrien = self.getGlobalOrientation(motion, base)
+            u = vecNormalize(np.cross(b-a,t-a))
+            R_diff_base = getRotMatrix(a, u, angBAT)
+            glob_baseOrien = R_diff_base @ glob_baseOrien
+            
+            M = posture.getTotalTransMatrix(base)
+            M = np.linalg.inv([M])[0]
+            local_baseOrien = M @ glob_baseOrien
+            posture.setJointTransMatrix(base, local_baseOrien)
+
+            #mid
+            b = self.getGlobalPosition(skeleton, motion, mid.idx)
+            c = self.getGlobalPosition(skeleton, motion, end.idx)
+            bt = np.linalg.norm(t-b)
+            ct = np.linalg.norm(t-c)
+            angCBT = getAngle(bc,bt,ct)[2]
+            glob_midOrien = self.getGlobalOrientation(motion, mid)
+            u = vecNormalize(np.cross(c-b,t-b))
+            R_diff_mid = getRotMatrix(b, u, angCBT)
+            glob_midOrien = R_diff_mid @ glob_midOrien
+            
+            M = posture.getTotalTransMatrix(mid)
+            M = np.linalg.inv([M])[0]
+            local_midOrien = M @ glob_midOrien
+            posture.setJointTransMatrix(mid, local_midOrien)
+
+            self.limbIK(base, end)
+            return 
+        
+        A, B, C = getAngle(bc,ac,ab)
+        A1, B1, C1 = getAngle(bc,ac1,ab)
+        
+        diff_A = (A - A1)*180 / np.pi
+        diff_B = (B - B1)*180 / np.pi
+
+        glob_baseOrien = self.getGlobalOrientation(motion, base)
+        u = vecNormalize(np.cross(b-a,c-a))
+        R_diff_base = getRotMatrix(a,u,diff_A)
+        glob_baseOrien = R_diff_base @ glob_baseOrien
+        
+        # 로컬 계산하여 base에 적용
+        M = posture.getTotalTransMatrix(base)
+        M = np.linalg.inv([M])[0]
+        local_baseOrien = M @ glob_baseOrien
+        posture.setJointTransMatrix(base, local_baseOrien)
+
+        b = self.getGlobalPosition(skeleton, motion, mid.idx)
+        c = self.getGlobalPosition(skeleton, motion, end.idx)
+        glob_midOrien = self.getGlobalOrientation(motion, mid)
+        u = vecNormalize(np.cross(a-b,c-b))
+        R_diff_mid = getRotMatrix(b, u, diff_B)
+        glob_midOrien = R_diff_mid @ glob_midOrien
+        
+        # 로컬 계산하여 mid에 적용
+        M = posture.getTotalTransMatrix(mid)
+        M = np.linalg.inv([M])[0]
+        local_midOrien = M @ glob_midOrien
+        posture.setJointTransMatrix(mid, local_midOrien)
+
+        # step2
+        # b = self.getGlobalPosition(mid.idx)
+        c = self.getGlobalPosition(skeleton, motion, end.idx)
+        ct = np.linalg.norm(c-t)
+        angCAT = getAngle(ac1,ac1,ct)[2]
+
+        glob_baseOrien = self.getGlobalOrientation(motion, base)
+        u = vecNormalize(np.cross(c-a,t-a))
+        R_diff_base = getRotMatrix(a, u, angCAT)
+        glob_baseOrien = R_diff_base @ glob_baseOrien
+        
+        # 로컬 계산하여 base에 적용
+        M = posture.getTotalTransMatrix(base)
+        M = np.linalg.inv([M])[0]
+        local_baseOrien = M @ glob_baseOrien
+        posture.setJointTransMatrix(base, local_baseOrien)
+
+
+
+
+
+
+
+
+        
 
         
 

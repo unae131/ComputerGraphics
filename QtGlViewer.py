@@ -9,7 +9,7 @@ import platform
 class QtViewer(QOpenGLWidget):
     def  __init__(self, fileName, label, slider, parent = None):
         super(QtViewer, self).__init__(parent)
-        self.glDrawer = GLDrawer(fileName)
+        self.glDrawer = GlDrawer(fileName, kinematics=True, targetJointIdx=1,targetPos=[1.8,1.0,0.4])
         self.label = label
         self.slider = slider
         self.mousePressed = False

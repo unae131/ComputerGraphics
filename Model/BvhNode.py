@@ -20,8 +20,6 @@ class BvhNode():
         if self.parent != None:
             self.parent.children.append(self)
         self.children = []
-        
-        self.offset = []
         self.channels = []
 
         self.idx = 0
