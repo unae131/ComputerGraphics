@@ -387,6 +387,7 @@ class GlDrawer():
 
     def setTargetJoint(self, idx):
         self.targetJointIdx = idx
+        self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
 
     def getGlobalPosition(self, skeleton, motion, nodeIdx, frame = -1):        
         node = skeleton.hierarchy[nodeIdx]

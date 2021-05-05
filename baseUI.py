@@ -1,4 +1,4 @@
-from QtGlViewer import *
+from QtGlWidget import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_MainWindow(object):
@@ -17,7 +17,7 @@ class Ui_MainWindow(object):
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
 
-        self.openGLWidget = QtViewer("bvhFiles/sample-walk.bvh", label = self.label, slider = self.horizontalSlider, parent = self.centralwidget)
+        self.openGLWidget = QtGlWidget("bvhFiles/sample-walk.bvh", label = self.label, slider = self.horizontalSlider, parent = self.centralwidget)
         self.openGLWidget.setGeometry(QtCore.QRect(-1, -21, 721, 411))
         self.openGLWidget.setObjectName("openGLWidget")
         self.openGLWidget.show()
@@ -30,12 +30,6 @@ class Ui_MainWindow(object):
         self.pushButton.setGeometry(QtCore.QRect(0, 430, 102, 32))
         self.pushButton.setObjectName("pushButton")
         self.pushButton.clicked.connect(self.openGLWidget.glDrawer.switchPlaying)
-
-        self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
-        self.radioButton.setGeometry(QtCore.QRect(400, 407, 100, 20))
-        self.radioButton.setObjectName("radioButton")
-        self.radioButton.setChecked(False)
-        self.radioButton.clicked.connect(self.on_toggle_mode)
 
         self.zoomInButton = QtWidgets.QPushButton(self.centralwidget)
         self.zoomInButton.setGeometry(QtCore.QRect(640, 400, 33, 30))
@@ -61,6 +55,22 @@ class Ui_MainWindow(object):
         self.limbIKBtn.setObjectName("limbIKBtn")
         self.limbIKBtn.setGeometry(QtCore.QRect(330, 402, 50, 30))
         self.limbIKBtn.clicked.connect(self.onIKClicked)
+
+        self.jointLineEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.jointLineEdit.setObjectName("jointLineEdit")
+        self.jointLineEdit.setGeometry(QtCore.QRect(380, 407, 40, 20))
+        self.jointLineEdit.textChanged.connect(self.onJointChanged)
+
+        self.jointBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.jointBtn.setObjectName("jointBtn")
+        self.jointBtn.setGeometry(QtCore.QRect(420, 402, 80, 30))
+        self.jointBtn.clicked.connect(self.onJointClicked)
+
+        self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
+        self.radioButton.setGeometry(QtCore.QRect(520, 407, 100, 20))
+        self.radioButton.setObjectName("radioButton")
+        self.radioButton.setChecked(False)
+        self.radioButton.clicked.connect(self.on_toggle_mode)
 
         self.widget = QtWidgets.QWidget(self.centralwidget)
         self.widget.setGeometry(QtCore.QRect(10, 400, 193, 33))
@@ -102,6 +112,8 @@ class Ui_MainWindow(object):
         self.xyzLineEdit.setText(_translate("MainWindow", "0, 0, 0"))
         self.xyzBtn.setText(_translate("MainWindow", "타겟"))
         self.limbIKBtn.setText(_translate("MainWindow", "이동"))
+        self.jointLineEdit.setText(_translate("MainWindow", "0"))
+        self.jointBtn.setText(_translate("MainWindow", "타겟조인트"))
 
     def updateLabel(self, value):
         self.openGLWidget.glDrawer.curFrame = value
@@ -118,6 +130,9 @@ class Ui_MainWindow(object):
     def onXYZChanged(self, frame):
         self.xyzLineEdit.setText(frame)
 
+    def onJointChanged(self, frame):
+        self.jointLineEdit.setText(frame)
+
     def onClicked(self, frame):
         self.openGLWidget.glDrawer.curFrame = int(self.lineEdit.text())
 
@@ -128,6 +143,9 @@ class Ui_MainWindow(object):
     def onIKClicked(self, frame):
         targetJoint= self.openGLWidget.glDrawer.targetJoint
         self.openGLWidget.glDrawer.limbIK(targetJoint.parent, targetJoint)
+
+    def onJointClicked(self, frame):
+        self.openGLWidget.glDrawer.setTargetJoint(int(self.jointLineEdit.text()))
 
     def zoomIn_callback(self):
         self.openGLWidget.glDrawer.camera.zoom(0.5)
