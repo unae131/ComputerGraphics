@@ -1,14 +1,11 @@
 from GlDrawer import *
-from BvhParser import *
-from baseUI import *
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QOpenGLWidget
 import platform
  
-class QtViewer(QOpenGLWidget):
+class QtGlWidget(QOpenGLWidget):
     def  __init__(self, fileName, label, slider, parent = None):
-        super(QtViewer, self).__init__(parent)
+        super(QtGlWidget, self).__init__(parent)
         self.glDrawer = GlDrawer(fileName, kinematics=True, targetJointIdx=1,targetPos=[1.8,1.0,0.4])
         self.label = label
         self.slider = slider
