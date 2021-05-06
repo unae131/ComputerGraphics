@@ -31,9 +31,9 @@ class GlDrawer():
         self.targetPos = targetPos
 
         # time warp
-        # self.motion = timeWarp(self.motion, halfScale, end_t= 2*self.motion.frames)
-        # self.motion = timeWarp(self.motion, doubleScale)
-        # self.motion = timeWarp(self.motion, sinScale)
+        # self.motion = timeWarp(self.motion, halfScale, end_t= self.motion.frames)
+        # self.motion = timeWarp(self.motion, doubleScale, end_t = self.motion.frames)
+        # self.motion = timeWarp(self.motion, sinScale, end_t= self.motion.frames)
 
         # motion warp
         self.motionWarp = False
@@ -45,8 +45,12 @@ class GlDrawer():
             self.motion = motionWarp(self.motion, self.targetPosture, targetFrame, 80, 130)
 
         # motion stiching
-        motion2 = readBVHfile("bvhFiles/02_04_bend.bvh")[1]
-        self.motion = motionStitch(self.motion, motion2, motion2.frames)
+        motion2 = readBVHfile("bvhFiles/02_04_run.bvh")[1]
+        # self.motion = motionStitch(self.motion, motion2, motion2.frames-1)
+
+        # blend motion
+        motion2 = motionStitch(self.motion, motion2, motion2.frames-1).cutMotion(len(self.motion.postures), len(self.motion.postures) + len(motion2.postures)-1)
+        self.motion = blendMotions(self.motion, motion2, 78, 47)
 
     def createVertexArraySeparate(self, size,r):
         varr = np.array([

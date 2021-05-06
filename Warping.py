@@ -50,29 +50,33 @@ def interpolatePostures(P0, P1, t): # t : 0~1, have same skel
         
     return newP
 
-def timeWarp(motion, scale_function, start_t = 0, end_t = 298):
-    if scale_function(start_t) >= motion.frames:
+def timeWarp(motion, scale_function, start_t = 0, end_t = 298, s = 1):
+    if scale_function == scale and scale(start_t, s) >= motion.frames:
         return None
 
-    newMotion = Motion(motion.skeleton, end_t - start_t, motion.frame_time)
+    elif scale_function != scale and scale_function(start_t) >= motion.frames:
+        return None
 
-    i = -1
-    for t in range(start_t, end_t):
-        i+=1
-        frame = scale_function(t)
-        if frame >= motion.frames or frame < 0:
+    newPostures = []
+    t = -1
+    while True:
+        t+=1
+        frame = scale_function(t) if scale_function != scale else scale_function(t,s)
+
+        # print(t, frame, motion.frames)
+        if frame < start_t or frame > end_t:
             break
 
         if frame % 1 == 0:
-            newMotion.postures[i] = motion.getPosture(int(frame))
+            newPostures.append(motion.getPosture(int(frame)))
             continue
 
         p0 = motion.getPosture(int(frame))
         p1 = motion.getPosture(int(frame) + 1)
-        newMotion.postures[i] = interpolatePostures(p0, p1, frame % 1)
+        newPostures.append(interpolatePostures(p0, p1, frame % 1))
     
-    newMotion.frames = i
-    newMotion.postures = newMotion.postures[:i]
+    newMotion = Motion(motion.skeleton, frames = len(newPostures), frame_time=motion.frame_time)
+    newMotion.postures = newPostures
     
     return newMotion
 
@@ -124,14 +128,54 @@ def motionStitch(m1, m2, length):
 
     d = sub(m1_last, m2_first)
 
-    m2 = motionWarp(m2, add(m2_first, d), 0, 0, 200)
+    m2 = motionWarp(m2, add(m2_first, d), 0, 0, length)
 
     stitched = Motion(m1.skeleton, frames = m1.frames + m2.frames, frame_time= m1.frame_time)
-    print(m1.frames, m2.frames, stitched.frames)
+    # print(m1.frames, m2.frames, stitched.frames)
     stitched.postures[:m1.frames] = m1.postures
     stitched.postures[-m2.frames:] = m2.postures
 
     return stitched
+
+def blendMotions(m1, m2, m1_step_len, m2_step_len): # length of two motions are same
+    m1_step = Motion(m1.skeleton, frames = m1_step_len)
+    m1_step.postures = m1.postures[-m1_step_len:]
+
+    m2_step = Motion(m2.skeleton, frames = m2_step_len)
+    m2_step.postures = m2.postures[:m2_step_len]
+
+    length = int((m1_step_len + m2_step_len) / 2)
+
+    scaled_m1_step = timeWarp(m1_step, scale, 0, m1_step_len, m1_step_len/length)
+    scaled_m2_step = timeWarp(m2_step, scale, 0, m2_step_len, m2_step_len/length)
+    length = min(length, len(scaled_m1_step.postures), len(scaled_m2_step.postures))
+
+    scaled_m1_step.frames = scaled_m2_step.frames = length
+    scaled_m1_step.postures = scaled_m1_step.postures[-length:]
+    scaled_m2_step.postures = scaled_m2_step.postures[:length]
+
+    # print(m1_step_len, m2_step_len, length)
+    # print(len(scaled_m1_step.postures), len(scaled_m2_step.postures))
+    
+    interp_postures = np.full(length, None)
+    for t in range(length):
+        c = cosTransition(t, length)
+        interp_postures[t] = add(scalarMult(c, scaled_m1_step.postures[t]),
+                                 scalarMult((1-c), scaled_m2_step.postures[t]))
+
+    front_len = len(m1.postures) - m1_step_len
+    rear_len = len(m2.postures) - m2_step_len
+    print(front_len, front_len + length, front_len+length +rear_len)
+
+    blend = Motion(m1.skeleton, frames = front_len + length + rear_len, frame_time= m1.frame_time)
+    blend.postures[:front_len] = m1.postures[:front_len]
+    blend.postures[front_len:front_len + length] = interp_postures
+    blend.postures[front_len+length:front_len+length+rear_len] = m2.postures[-rear_len:]
+
+    return blend
+
+def scale(t, s):
+    return s*t
 
 def doubleScale(t):
     return 2*t
@@ -140,7 +184,7 @@ def halfScale(t):
     return 0.5*t
 
 def sinScale(t):
-    return 298 * np.sin(np.pi / 2 * 1/298 * t)
+    return 299 * (np.sin(np.pi * t / 299 - np.pi/2) + 1)
 
-def conScale(t, length = 484):
-    return np.cos(np.pi * 1/length * t) + 1
+def cosTransition(t, length = 484):
+    return 1/2 * np.cos(np.pi/length * t) + 1/2

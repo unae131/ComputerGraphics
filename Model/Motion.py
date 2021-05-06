@@ -35,6 +35,11 @@ class Motion():
         frame = frame % self.frames
         return self.postures[frame]
 
+    def cutMotion(self, start, end):
+        cut = Motion(self.skeleton, end - start + 1, self.frame_time)
+        cut.postures = self.postures[start: end+1]
+        return cut
+        
     def print(self):
         print(self.skeleton)
         print(self.frames)
