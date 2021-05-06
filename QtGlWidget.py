@@ -6,7 +6,7 @@ import platform
 class QtGlWidget(QOpenGLWidget):
     def  __init__(self, fileName, label, slider, parent = None):
         super(QtGlWidget, self).__init__(parent)
-        self.glDrawer = GlDrawer(fileName, kinematics=False, targetJointIdx=1,targetPos=[1.8,1.0,0.4])
+        self.glDrawer = GlDrawer(fileName, kinematics=True,targetPos=[0.,0.,0.])
         self.label = label
         self.slider = slider
         self.mousePressed = False

@@ -11,8 +11,9 @@ from OpenGL.GLU import *
 from Kinematics import *
 
 class GlDrawer():
-    def __init__(self, fileName, kinematics = False,targetJointIdx = 0, targetPos = [0,0,0]):
+    def __init__(self, fileName, kinematics = False, targetJointIdx = -1, targetPos = [0,0,0]):
         self.skeleton, self.motion = readBVHfile(fileName)
+        self.origin_motion = self.motion
         self.camera = Camera()
         self.curFrame = 0
         
@@ -24,34 +25,41 @@ class GlDrawer():
         self.kine_skel, self.kine_mot = readBVHfile(fileName)
 
         if targetJointIdx < 0 or targetJointIdx >= len(self.kine_skel.hierarchy):
-            self.targetJointIdx = 0
+            self.targetJointIdx = -1
         else:
             self.targetJointIdx = targetJointIdx
-
-        self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
+            self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
+        
         self.targetPos = targetPos
+        self.motionWarp = False
+        self.timeWarp = False
 
         # time warp
         # self.motion = timeWarp(self.motion, halfScale, end_t= self.motion.frames)
         # self.motion = timeWarp(self.motion, doubleScale, end_t = self.motion.frames)
         # self.motion = timeWarp(self.motion, sinScale, end_t= self.motion.frames)
 
-        # motion warp
-        self.motionWarp = False
-        if self.motionWarp:
-            targetFrame = 100
-            targetJoint = self.skeleton.hierarchy[2]
-            self.targetPosture = self.motion.postures[targetFrame].copy()
-            self.targetPosture.setNodeOrientation(targetJoint, self.targetPosture.getJointTransMatrix(targetJoint) @ getXRotMatrix(90))
-            self.motion = motionWarp(self.motion, self.targetPosture, targetFrame, 80, 130)
-
         # motion stiching
-        # motion2 = readBVHfile("bvhFiles/02_04_run.bvh")[1]
+        motion2 = readBVHfile("bvhFiles/02_04_run.bvh")[1]
         # self.motion = motionStitch(self.motion, motion2, motion2.frames-1)
 
         # blend motion
-        # motion2 = motionStitch(self.motion, motion2, motion2.frames-1).cutMotion(len(self.motion.postures), len(self.motion.postures) + len(motion2.postures)-1)
-        # self.motion = blendMotions(self.motion, motion2, 78, 47)
+        motion2 = motionStitch(self.motion, motion2, motion2.frames-1).cutMotion(len(self.motion.postures), len(self.motion.postures) + len(motion2.postures)-1)
+        self.motion = blendMotions(self.motion, motion2, 78, 47)
+    
+    def drawOriginal(self):
+        self.motion = self.origin_motion
+        self.motionWarp = False
+
+    def drawTimeWarp(self, func):
+        self.motion = timeWarp(self.origin_motion, func, end_t = self.origin_motion.frames)
+
+    def drawWarpedMotion(self, targetJointIdx, targetFrame, degree, start = 80, end = 130):
+        self.targetPosture = self.origin_motion.postures[targetFrame].copy()
+        targetJoint = self.skeleton.hierarchy[targetJointIdx]
+        self.targetPosture.setNodeOrientation(targetJoint, self.targetPosture.getJointTransMatrix(targetJoint) @ getXRotMatrix(degree))
+        self.motionWarp = True
+        self.motion = motionWarp(self.origin_motion.copy(), self.targetPosture, targetFrame, start, end)
 
     def createVertexArraySeparate(self, size,r):
         varr = np.array([
@@ -324,7 +332,7 @@ class GlDrawer():
     def switchPlaying(self):
         self.playing = not self.playing
 
-    def setViewPort(self, fovy = 160, aspect = 1, zNear = 1, zFar = 50):
+    def setViewPort(self, fovy = 140, aspect = 1, zNear = 1, zFar = 20):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(fovy, aspect, zNear, zFar)
@@ -429,7 +437,7 @@ class GlDrawer():
             glRotatef(90, 0,1,0)
             glScalef(0.02,0.02,0.02)
             self.drawJointVelocity(self.skeleton, self.motion, self.targetJointIdx)
-            self.drawBody(self.kine_skel, self.kine_mot)
+            # self.drawBody(self.kine_skel, self.kine_mot)
             glPopMatrix()
             
             self.drawBoxGlobal(self.targetPos[0],self.targetPos[1],self.targetPos[2])
@@ -448,7 +456,7 @@ class GlDrawer():
         self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
 
     def drawJointVelocity(self, skeleton, motion, nodeIdx):
-        if self.curFrame == 0:
+        if self.curFrame == 0 or nodeIdx == -1:
             return 
 
         curP = getGlobalPosition(skeleton, motion, nodeIdx, self.curFrame)

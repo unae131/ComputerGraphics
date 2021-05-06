@@ -1,5 +1,6 @@
 from QtGlWidget import *
 from PyQt5 import QtCore, QtGui, QtWidgets
+from Warping import *
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow, resize):
@@ -66,6 +67,34 @@ class Ui_MainWindow(object):
         self.jointBtn.setGeometry(QtCore.QRect(420, 402, 80, 30))
         self.jointBtn.clicked.connect(self.onJointClicked)
 
+        self.mtWarpLineEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.mtWarpLineEdit.setObjectName("mtWarpLineEdit")
+        self.mtWarpLineEdit.setGeometry(QtCore.QRect(10, 460, 120, 20))
+        self.mtWarpLineEdit.textChanged.connect(self.onMtWarpLineChagned)
+
+        self.mtWarpBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.mtWarpBtn.setObjectName("mtWarpBtn")
+        self.mtWarpBtn.setGeometry(QtCore.QRect(132, 455, 100, 30))
+        self.mtWarpBtn.clicked.connect(self.onMtWarpClicked)
+
+        self.timeWarp2xBtn = QtWidgets.QRadioButton(self.centralwidget)
+        self.timeWarp2xBtn.setObjectName("timeWarp2xBtn")
+        self.timeWarp2xBtn.setGeometry(QtCore.QRect(234, 455, 100, 20))
+        self.timeWarp2xBtn.setChecked(False)
+        self.timeWarp2xBtn.clicked.connect(self.on_toggle_2x)
+
+        self.timeWarp0_5xBtn = QtWidgets.QRadioButton(self.centralwidget)
+        self.timeWarp0_5xBtn.setObjectName("timeWarp0.5xBtn")
+        self.timeWarp0_5xBtn.setGeometry(QtCore.QRect(284, 455, 100, 20))
+        self.timeWarp0_5xBtn.setChecked(False)
+        self.timeWarp0_5xBtn.clicked.connect(self.on_toggle_halfx)
+
+        self.timeWarpSinxBtn = QtWidgets.QRadioButton(self.centralwidget)
+        self.timeWarpSinxBtn.setObjectName("timeWarpSinxBtn")
+        self.timeWarpSinxBtn.setGeometry(QtCore.QRect(334, 455, 100, 20))
+        self.timeWarpSinxBtn.setChecked(False)
+        self.timeWarpSinxBtn.clicked.connect(self.on_toggle_sinx)
+
         self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
         self.radioButton.setGeometry(QtCore.QRect(520, 407, 100, 20))
         self.radioButton.setObjectName("radioButton")
@@ -101,7 +130,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "motion blending"))
         self.pushButton.setText(_translate("MainWindow", "시작/멈춤"))
         self.label.setText(_translate("MainWindow", str(self.openGLWidget.glDrawer.curFrame)+"/"+str(self.openGLWidget.glDrawer.motion.frames)))
         self.radioButton.setText(_translate("MainWindow", "Wire Frame"))
@@ -112,9 +141,14 @@ class Ui_MainWindow(object):
         self.xyzLineEdit.setText(_translate("MainWindow", "0, 0, 0"))
         self.xyzBtn.setText(_translate("MainWindow", "타겟"))
         self.limbIKBtn.setText(_translate("MainWindow", "이동"))
-        self.jointLineEdit.setText(_translate("MainWindow", "0"))
+        self.jointLineEdit.setText(_translate("MainWindow", "-1"))
         self.jointBtn.setText(_translate("MainWindow", "타겟조인트"))
-
+        self.mtWarpLineEdit.setText(_translate("MainWindow", "j/f/deg/s/e"))
+        self.mtWarpBtn.setText(_translate("MainWindow", "motion warp"))
+        self.timeWarp2xBtn.setText(_translate("MainWindow", "2x"))
+        self.timeWarp0_5xBtn.setText(_translate("MainWindow", "0.5x"))
+        self.timeWarpSinxBtn.setText(_translate("MainWindow", "Sinx"))
+        
     def updateLabel(self, value):
         self.openGLWidget.glDrawer.curFrame = value
 
@@ -123,6 +157,24 @@ class Ui_MainWindow(object):
             self.openGLWidget.glDrawer.fill = False
         else:
             self.openGLWidget.glDrawer.fill = True
+
+    def on_toggle_2x(self):
+        if self.timeWarp2xBtn.isChecked():
+            self.openGLWidget.glDrawer.drawTimeWarp(doubleScale)
+        else:
+            self.openGLWidget.glDrawer.drawOriginal()
+
+    def on_toggle_halfx(self):
+        if self.timeWarp0_5xBtn.isChecked():
+            self.openGLWidget.glDrawer.drawTimeWarp(halfScale)
+        else:
+            self.openGLWidget.glDrawer.drawOriginal()
+
+    def on_toggle_sinx(self):
+        if self.timeWarpSinxBtn.isChecked():
+            self.openGLWidget.glDrawer.drawTimeWarp(sinScale)
+        else:
+            self.openGLWidget.glDrawer.drawOriginal()
 
     def onChanged(self, frame):
         self.lineEdit.setText(frame)
@@ -133,6 +185,9 @@ class Ui_MainWindow(object):
     def onJointChanged(self, frame):
         self.jointLineEdit.setText(frame)
 
+    def onMtWarpLineChagned(self, frame):
+        self.mtWarpLineEdit.setText(frame)
+
     def onClicked(self, frame):
         self.openGLWidget.glDrawer.curFrame = int(self.lineEdit.text())
 
@@ -141,8 +196,22 @@ class Ui_MainWindow(object):
         self.openGLWidget.glDrawer.setTargetPos(target)
 
     def onIKClicked(self, frame):
-        targetJoint= self.openGLWidget.glDrawer.targetJoint
-        self.openGLWidget.glDrawer.limbIK(targetJoint.parent, targetJoint)
+        # targetJoint= self.openGLWidget.glDrawer.targetJoint
+        # self.openGLWidget.glDrawer.limbIK(targetJoint.parent, targetJoint)
+        pass
+
+    def onMtWarpClicked(self, frame):
+        if self.mtWarpLineEdit.text() == "-1":
+            self.openGLWidget.glDrawer.drawOriginal()
+            return
+
+        args = self.mtWarpLineEdit.text().split("/")
+        joint = int(args[0])
+        frame = int(args[1])
+        degree = float(args[2])
+        start = int(args[3])
+        end = int(args[4])
+        self.openGLWidget.glDrawer.drawWarpedMotion(joint, frame, degree, start, end)
 
     def onJointClicked(self, frame):
         self.openGLWidget.glDrawer.setTargetJoint(int(self.jointLineEdit.text()))

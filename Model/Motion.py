@@ -39,7 +39,15 @@ class Motion():
         cut = Motion(self.skeleton, end - start + 1, self.frame_time)
         cut.postures = self.postures[start: end+1]
         return cut
+    
+    def copy(self):
+        motion = Motion(self.skeleton, self.frames, self.frame_time)
         
+        for i in range(motion.frames):
+            motion.postures[i] = self.postures[i].copy()
+
+        return motion
+
     def print(self):
         print(self.skeleton)
         print(self.frames)
