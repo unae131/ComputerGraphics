@@ -32,6 +32,7 @@ class Motion():
         return True
 
     def getPosture(self, frame):
+        frame = frame % self.frames
         return self.postures[frame]
 
     def print(self):

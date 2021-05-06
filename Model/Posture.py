@@ -6,23 +6,15 @@ class Posture():
     def __init__(self, skeleton, data):
         self.skeleton = skeleton
         self.data = data
+
         self.jointTransMatrices = np.full(len(skeleton.hierarchy), None)
         self.linkTransMatrices = np.full(len(skeleton.hierarchy), None)
         self.totalTransMatrices = np.full(len(skeleton.hierarchy), None)
-    
-    def getTotalTransMatrix(self, node):
-        idx = node.idx
-
-        if self.totalTransMatrices[idx] is None:
-            M = np.eye(4, dtype=np.float)
-            
-            while node is not None:
-                M = self.getLinkMatrix(node) @ self.getJointTransMatrix(node) @ M
-                node = node.parent
-
-            self.totalTransMatrices[idx] = M
-
-        return self.totalTransMatrices[idx]
+        
+        for node in skeleton.hierarchy:
+            self.getJointTransMatrix(node)
+            self.getLinkMatrix(node)
+            self.getTotalTransMatrix(node)
 
     def setJointTransMatrix(self, node, M):
         if node.type == node.TYPE_ROOT:
@@ -37,18 +29,41 @@ class Posture():
             for n in node.children:
                 self.initTotalTransMatrix(n)
 
-    def getJointTransMatrix(self, node):
-        if node.type == node.TYPE_END_SITE:
-            return np.eye(4)
+    def getTotalTransMatrix(self, node):
+        idx = node.idx
 
+        if self.totalTransMatrices[idx] is None:
+            M = np.eye(4, dtype=np.float)
+            
+            while node is not None:
+                M = self.getLinkMatrix(node) @ self.getJointTransMatrix(node) @ M
+                node = node.parent
+
+            self.totalTransMatrices[idx] = M
+
+        return self.totalTransMatrices[idx]
+
+    def getRootWorldPosition(self):
+        return self.data[:3]
+
+    def getRootTransMatrix(self):
+        T = np.eye(4)
+        T[:3,3] = self.data[:3]
+
+        return T
+
+    def getJointTransMatrix(self, node):
         idx = node.idx
 
         if self.jointTransMatrices[idx] is None:
             M = np.eye(4)
+            if node.type == node.TYPE_END_SITE:
+                self.jointTransMatrices[idx] = M
 
             if node.type == node.TYPE_ROOT:
                 i = 3
-            else:i = 0
+            else:
+                i = 0
             
             for channel in node.channels[-3:]:
                 M = M @ self.getChannelmatrix(channel, self.data[node.chIdx + i])
@@ -62,21 +77,14 @@ class Posture():
 
         return self.jointTransMatrices[idx]
 
-    def getRootTransMatrix(self):
-        T = np.eye(4)
-        T[:3,3] = self.data[:3]
-
-        return T
-
     def getLinkMatrix(self, node):
-        if node.type == node.TYPE_ROOT:
-            return np.eye(4)
-
         idx = node.idx
 
         if self.linkTransMatrices[idx] is None:
             M = np.eye(4)
-            M[:3,3] = node.offset
+
+            if node.type != node.TYPE_ROOT:
+                M[:3,3] = node.offset
             self.linkTransMatrices[idx] = M
 
         return self.linkTransMatrices[idx]

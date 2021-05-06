@@ -1,6 +1,7 @@
 from Camera import *
 from BvhParser import *
 from Matrix import *
+from MotionTransformer import *
 
 import math
 import numpy as np
@@ -331,7 +332,7 @@ class GlDrawer():
         glMaterialfv(GL_FRONT, GL_SPECULAR, specularObjectColor)
         glColor3ub(r, g, b) # glColor*() is ignored if lighting is enabled
 
-    def render(self, lighting = True):
+    def render(self, lighting = False):
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glEnable(GL_DEPTH_TEST)
 
@@ -361,6 +362,14 @@ class GlDrawer():
 
             glPopMatrix()
 
+        # timeWarp
+        glPushMatrix()
+        self.setObjectColor(255,0,255)
+        timeWarpedMotion = timeWarp(self.motion, sinScale)
+        self.drawBody(self.skeleton, timeWarpedMotion)
+        glPopMatrix()
+
+        # lighting
         if lighting:
             self.unsetLighting()
 

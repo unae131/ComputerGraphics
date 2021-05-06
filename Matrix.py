@@ -66,3 +66,9 @@ def getAngle(a, b, c):
     cosB = (a**2 + c**2 - b**2)/ 2*a*c
     cosC = (a**2 + b**2 - c**2)/ 2*a*b
     return np.arccos(cosA),np.arccos(cosB),np.arccos(cosC)
+
+def quaternionToMatrix(q):
+    return np.array([[2*(q[0]**2 + q[1]**2) - 1, 2 * (q[1]*q[2] - q[0]*q[3]), 2 * (q[1] * q[3] + q[0] * q[2]), 0.],
+                    [2*(q[1]*q[2] + q[0]*q[3]), 2*(q[0]**2 + q[2]**2)-1, 2*(q[2]*q[3] - q[0]*q[1]), 0.],
+                    [2*(q[1]*q[3]-q[0]*q[2]), 2*(q[2]*q[3] + q[0]*q[1]), 2*(q[0]**2+q[3]**2)-1, 0.],
+                    [0., 0., 0., 1.]])
