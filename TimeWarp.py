@@ -11,28 +11,28 @@ def lerpPositions(position0, position1, t):
 
     return (1-t) * position0 + t * position1
 
-def slerpEulerAngles(rotDir, a0, a1, t): # 0~1
-    rot_matrices = R.from_euler(rotDir, [a0, a1], degrees=True)
+def slerpEulerAngles(rotDir, R0, R1, t): # 0~1
+    rot_matrices = R.from_matrix([R0[:3,:3], R1[:3,:3]])
     rot_tiems = [0,1]
     slerp = Slerp(rot_tiems, rot_matrices)
 
     times = [t]
 
-    interpAngle = slerp(times).as_euler(rotDir, degrees=True).reshape(3,)
+    interpR = np.eye(4)
+    interpR[:3,:3] = slerp(times).as_matrix()
 
-    return interpAngle
+    return interpR
 
-def interpolatePostures(P0, P1, t):
-    skelNodes = P0.skeleton.hierarchy
-    interPosture = Posture(P0.skeleton, P0.data)
-    interPosture.data[:3] = lerpPositions(P0.getRootWorldPosition(), P1.getRootWorldPosition(), t)
+def interpolatePostures(P0, P1, t): # t : 0~1, have same skel
+    newP = Posture(P0.skeleton)
+    newP.setRootWorldPosition(lerpPositions(P0.getRootWorldPosition(), P1.getRootWorldPosition(), t))
     
     i = -1
-    for node in skelNodes:
+    for node in P0.skeleton.hierarchy:
+        i+=1
+
         if node.type == BvhNode.TYPE_END_SITE:
             continue
-
-        i+=1
 
         rotDir = ""
         for ch in node.channels[-3:]:
@@ -43,9 +43,11 @@ def interpolatePostures(P0, P1, t):
                 rotDir += 'y'
             else:
                 rotDir += 'z'
-        interPosture.data[i*3+3: i*3 + 6] = slerpEulerAngles(rotDir, P0.data[i*3+3: i*3 + 6], P1.data[i*3+3:i*3+6], t)
+
+        newM = slerpEulerAngles(rotDir,P0.getJointTransMatrix(node), P1.getJointTransMatrix(node), t)
+        newP.setNodeOrientation(node, newM)
         
-    return interPosture
+    return newP
 
 def timeWarp(motion, scale_function, start_t = 0, end_t = 198):
     if scale_function(start_t) >= motion.frames:

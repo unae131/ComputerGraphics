@@ -1,7 +1,7 @@
 from Camera import *
 from BvhParser import *
 from Matrix import *
-from MotionTransformer import *
+from TimeWarp import *
 
 import math
 import numpy as np
@@ -28,9 +28,9 @@ class GlDrawer():
         self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
         self.targetPos = targetPos
 
-        # self.motion = timeWarp(self.motion, halfScale, end_t= 2*self.motion.frames)
+        self.motion = timeWarp(self.motion, halfScale, end_t= 2*self.motion.frames)
         # self.motion = timeWarp(self.motion, doubleScale)
-        self.motion = timeWarp(self.motion, sinScale)
+        # self.motion = timeWarp(self.motion, sinScale)
 
     def createVertexArraySeparate(self, size,r):
         varr = np.array([
@@ -366,12 +366,6 @@ class GlDrawer():
 
             glPopMatrix()
 
-        # timeWarp
-        # glPushMatrix()
-        # self.setObjectColor(255,0,255)
-        # self.drawBody(self.skeleton, self.timeWarpedMotion)
-        # glPopMatrix()
-
         # lighting
         if lighting:
             self.unsetLighting()
@@ -568,15 +562,3 @@ class GlDrawer():
         M = np.linalg.inv([M])[0]
         local_baseOrien = M @ glob_baseOrien
         posture.setJointTransMatrix(base, local_baseOrien)
-
-
-
-
-
-
-
-
-        
-
-        
-

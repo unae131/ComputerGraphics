@@ -35,7 +35,7 @@ def readBVHfile (fileName):
 
                 if line == "":
                     continue
-            
+
             if nextStr == HIERARCHY and line.upper() == nextStr:
                 nextStr = BvhNode.TYPE_ROOT
                 continue
