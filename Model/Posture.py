@@ -39,7 +39,7 @@ class Posture():
             i+=1
 
         if node.type == node.TYPE_ROOT:
-            self.rootOrientMatrix = M
+            self.rootWorldOrientMatrix = M
             M = self.getRootTransMatrix() @ M
 
         self.jointTransMatrices[node.idx] = M
@@ -114,7 +114,7 @@ class Posture():
         return self.rootWorldPosition
     
     def getRootWorldOrienMatrix(self):
-        return self.rootOrientMatrix
+        return self.rootWorldOrientMatrix
 
     def getRootTransMatrix(self):
         T = np.eye(4)
@@ -151,3 +151,18 @@ class Posture():
 
         else:
             raise Exception("Wrong Channels")
+
+    def print(self):
+        print(self.rootWorldPosition, self.rootWorldOrientMatrix)
+        
+    def copy(self):
+        newPosture = Posture(self.skeleton)
+        newPosture.rootWorldOrientMatrix = np.array(self.rootWorldOrientMatrix)
+        newPosture.rootWorldPosition = np.array(self.rootWorldPosition)
+        newPosture.linkTransMatrices = np.array(self.linkTransMatrices)
+
+        for i in range(len(self.skeleton.hierarchy)):
+            newPosture.jointTransMatrices[i] = np.array(self.jointTransMatrices[i])
+            newPosture.totalTransMatrices[i] = np.array(self.totalTransMatrices[i])
+
+        return newPosture

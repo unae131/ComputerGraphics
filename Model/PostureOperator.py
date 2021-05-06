@@ -1,6 +1,6 @@
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
-from Posture import *
+from Model.Posture import *
 import numpy as np
 
 def add(o1, d):
@@ -26,13 +26,15 @@ def scalarMult(c, d1):
     d2.setRootWorldPosition(c*d1.getRootWorldPosition())
 
     for node in d1.skeleton.hierarchy:
-        rot_mat = R.from_matrix(d1.getJointTransMatrix(node)[:3,:3])
-        rot_time = [1]
+        rot = R.from_matrix([d1.getJointTransMatrix(node)[:3,:3]])
+        rot_vec = c * rot.as_rotvec()
 
-        slerp = Slerp(rot_time, rot_mat)
+        rot = R.from_rotvec(rot_vec)
+        M = rot.as_matrix()
+
 
         newMat = np.eye(4)
-        newMat[:3,:3] = slerp([c]).as_matrix()
+        newMat[:3,:3] = M
 
         d2.setNodeOrientation(node, newMat)
         

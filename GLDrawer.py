@@ -2,6 +2,7 @@ from Camera import *
 from BvhParser import *
 from Matrix import *
 from Warping import *
+from Model.PostureOperator import *
 
 import math
 import numpy as np
@@ -14,7 +15,8 @@ class GlDrawer():
         self.camera = Camera()
         self.curFrame = 0
         
-        self.fill = True
+        # TODO fill 고치기
+        self.fill = False
         self.playing = False
 
         self.kinematics = kinematics
@@ -28,10 +30,22 @@ class GlDrawer():
         self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
         self.targetPos = targetPos
 
-        self.motion = timeWarp(self.motion, halfScale, end_t= 2*self.motion.frames)
+        # time warp
+        # self.motion = timeWarp(self.motion, halfScale, end_t= 2*self.motion.frames)
         # self.motion = timeWarp(self.motion, doubleScale)
         # self.motion = timeWarp(self.motion, sinScale)
 
+        # motion warp
+        self.motionWarp = True
+        if self.motionWarp:
+            targetFrame = 100
+            targetJoint = self.skeleton.hierarchy[47]
+            self.targetPosture = self.motion.postures[targetFrame].copy()
+            self.targetPosture.setNodeOrientation(targetJoint, self.targetPosture.getJointTransMatrix(targetJoint) @ getXRotMatrix(90))
+            self.motion = motionWarp(self.motion, self.targetPosture, targetFrame, 80, 130)
+
+        # motion stiching
+        # self.motion = 
     def createVertexArraySeparate(self, size,r):
         varr = np.array([
             (0,0,1),
@@ -240,6 +254,22 @@ class GlDrawer():
 
         glPopMatrix()
 
+    def drawPosture(self, posture):
+        root = posture.skeleton.getRoot()
+
+        # draw root
+        glPushMatrix()
+
+        J0 = posture.getJointTransMatrix(root)
+
+        glMultMatrixf(J0.T)
+
+        for n in root.children:
+            self.drawBox(n.offset)
+            self.drawBodyNode(posture, n) 
+
+        glPopMatrix()
+
     def drawBody(self, skeleton, motion):
         posture = motion.getPosture(self.curFrame)
         root = skeleton.getRoot()
@@ -361,9 +391,20 @@ class GlDrawer():
         # draw bvhFile
         if self.skeleton is not None:
             glPushMatrix()
+            glRotatef(90, 0,1,0)
+            glScalef(0.02,0.02,0.02)
             self.setObjectColor(255,0,0)
             self.drawBody(self.skeleton, self.motion)
 
+            glPopMatrix()
+
+        # draw target pos for motion warping
+        if self.motionWarp:
+            glPushMatrix()
+            glScalef(0.02,0.02,0.02)
+            glRotatef(90, 0,1,0)
+            self.setObjectColor(0,200,200)
+            self.drawPosture(self.targetPosture)
             glPopMatrix()
 
         # lighting

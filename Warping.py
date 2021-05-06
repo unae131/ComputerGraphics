@@ -2,6 +2,7 @@ import numpy as np
 from Model.BvhNode import *
 from Model.Posture import *
 from Model.Motion import *
+from Model.PostureOperator import *
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
 
@@ -49,7 +50,7 @@ def interpolatePostures(P0, P1, t): # t : 0~1, have same skel
         
     return newP
 
-def timeWarp(motion, scale_function, start_t = 0, end_t = 198):
+def timeWarp(motion, scale_function, start_t = 0, end_t = 298):
     if scale_function(start_t) >= motion.frames:
         return None
 
@@ -75,6 +76,26 @@ def timeWarp(motion, scale_function, start_t = 0, end_t = 198):
     
     return newMotion
 
+def motionWarp(motion, targetPos, targetFrame, transStartFrame, transEndFrame):
+    warpedMotion = Motion(motion.skeleton, motion.frames, motion.frame_time)
+    warpedMotion.postures = motion.postures
+
+    diffPos = sub(targetPos, motion.getPosture(targetFrame))
+
+    frontTransLen = targetFrame - transStartFrame + 1
+    for i in range(frontTransLen):
+        d = scalarMult(i/(frontTransLen-1), diffPos)
+        warpedMotion.postures[transStartFrame + i] = add(warpedMotion.postures[transStartFrame+i], d)
+
+    rearTransLen = transEndFrame - targetFrame
+    
+    for i in range(1, rearTransLen+1):
+        j = rearTransLen - i
+        d = scalarMult(j/rearTransLen, diffPos)
+        warpedMotion.postures[targetFrame + i] = add(warpedMotion.postures[targetFrame + i], d)
+
+    return warpedMotion
+
 def doubleScale(t):
     return 2*t
 
@@ -82,4 +103,4 @@ def halfScale(t):
     return 0.5*t
 
 def sinScale(t):
-    return 198 * np.sin(np.pi / 2 * 1/198 * t)
+    return 298 * np.sin(np.pi / 2 * 1/298 * t)
