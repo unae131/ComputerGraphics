@@ -10,9 +10,9 @@ class Posture():
         self.totalTransMatrices = np.full(len(skeleton.hierarchy), None)
 
         if data is None:
-            self.rootWorldPosition = [0,0,0]
+            self.rootWorldPosition = np.array([0,0,0])
         else:
-            self.rootWorldPosition = data[:3]
+            self.rootWorldPosition = np.array(data[:3])
             
         for node in skeleton.hierarchy:
             self.initLinkTransMatrices(node)
@@ -79,19 +79,14 @@ class Posture():
     #     self.initTotalTransMatrix(node)
 
     def setRootWorldPosition(self, pos):
-        self.rootWorldPosition = pos
+        self.rootWorldPosition = np.array(pos)
         self.jointTransMatrices[0][:3,3] = pos
 
         for node in self.skeleton.hierarchy:
             self.initTotalTransMatrices(node)
         
     def setRootWorldOrientMatrix(self, M):
-        if M.shape != (4,4):
-            newM = np.eye(4)
-            newM[:3,:3] = M[:3,:3]
-            M = newM
-
-        self.rootWorldOrientMatrix = M
+        self.rootWorldOrientMatrix[:3,:3] = M[:3,:3]
         self.jointTransMatrices[0][:3,:3] = M[:3,:3]
 
         for node in self.skeleton.hierarchy:

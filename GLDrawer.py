@@ -1,7 +1,7 @@
 from Camera import *
 from BvhParser import *
 from Matrix import *
-from TimeWarp import *
+from Warping import *
 
 import math
 import numpy as np

@@ -11,7 +11,7 @@ def lerpPositions(position0, position1, t):
 
     return (1-t) * position0 + t * position1
 
-def slerpEulerAngles(rotDir, R0, R1, t): # 0~1
+def slerpMatrix(rotDir, R0, R1, t): # 0~1
     rot_matrices = R.from_matrix([R0[:3,:3], R1[:3,:3]])
     rot_tiems = [0,1]
     slerp = Slerp(rot_tiems, rot_matrices)
@@ -44,7 +44,7 @@ def interpolatePostures(P0, P1, t): # t : 0~1, have same skel
             else:
                 rotDir += 'z'
 
-        newM = slerpEulerAngles(rotDir,P0.getJointTransMatrix(node), P1.getJointTransMatrix(node), t)
+        newM = slerpMatrix(rotDir,P0.getJointTransMatrix(node), P1.getJointTransMatrix(node), t)
         newP.setNodeOrientation(node, newM)
         
     return newP
