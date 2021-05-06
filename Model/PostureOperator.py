@@ -32,7 +32,6 @@ def scalarMult(c, d1):
         rot = R.from_rotvec(rot_vec)
         M = rot.as_matrix()
 
-
         newMat = np.eye(4)
         newMat[:3,:3] = M
 

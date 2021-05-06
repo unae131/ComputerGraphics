@@ -83,18 +83,55 @@ def motionWarp(motion, targetPos, targetFrame, transStartFrame, transEndFrame):
     diffPos = sub(targetPos, motion.getPosture(targetFrame))
 
     frontTransLen = targetFrame - transStartFrame + 1
-    for i in range(frontTransLen):
+    for i in range(frontTransLen - 1):
         d = scalarMult(i/(frontTransLen-1), diffPos)
         warpedMotion.postures[transStartFrame + i] = add(warpedMotion.postures[transStartFrame+i], d)
 
+    warpedMotion.postures[targetFrame] = add(warpedMotion.postures[targetFrame], diffPos)
+
     rearTransLen = transEndFrame - targetFrame
-    
     for i in range(1, rearTransLen+1):
         j = rearTransLen - i
         d = scalarMult(j/rearTransLen, diffPos)
         warpedMotion.postures[targetFrame + i] = add(warpedMotion.postures[targetFrame + i], d)
 
     return warpedMotion
+
+def motionStitch(m1, m2, length):
+    m1_last = m1.postures[m1.frames-1]
+    m2_first = m2.postures[0]
+
+    m1_last_p = m1_last.getRootWorldPosition()
+    m1_last_R = m1_last.getRootWorldOrienMatrix()
+    m2_first_p = m2_first.getRootWorldPosition()
+    m2_first_R = m2_first.getRootWorldOrienMatrix()
+
+    diff_p = m1_last_p - m2_first_p
+    diff_p[1] = 0
+
+    diff = (m1_last_R @ m2_first_R.T)[:3,:3]
+    rotVec = R.from_matrix([diff]).as_rotvec().reshape(3,)
+    rotVec[0] = rotVec[2] = 0
+
+    diff_R = np.eye(4)
+    diff_R[:3,:3] = R.from_rotvec(rotVec).as_matrix().reshape(3,3)
+
+    for posture in m2.postures:
+        p = posture.getRootWorldPosition()
+        RotMat = posture.getRootWorldOrienMatrix()
+        posture.setRootWorldPosition(diff_R[:3,:3] @ (p - m2_first_p) + m2_first_p + diff_p)
+        posture.setRootWorldOrientMatrix(diff_R @ RotMat)
+
+    d = sub(m1_last, m2_first)
+
+    m2 = motionWarp(m2, add(m2_first, d), 0, 0, 200)
+
+    stitched = Motion(m1.skeleton, frames = m1.frames + m2.frames, frame_time= m1.frame_time)
+    print(m1.frames, m2.frames, stitched.frames)
+    stitched.postures[:m1.frames] = m1.postures
+    stitched.postures[-m2.frames:] = m2.postures
+
+    return stitched
 
 def doubleScale(t):
     return 2*t
@@ -104,3 +141,6 @@ def halfScale(t):
 
 def sinScale(t):
     return 298 * np.sin(np.pi / 2 * 1/298 * t)
+
+def conScale(t, length = 484):
+    return np.cos(np.pi * 1/length * t) + 1

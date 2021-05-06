@@ -36,16 +36,18 @@ class GlDrawer():
         # self.motion = timeWarp(self.motion, sinScale)
 
         # motion warp
-        self.motionWarp = True
+        self.motionWarp = False
         if self.motionWarp:
             targetFrame = 100
-            targetJoint = self.skeleton.hierarchy[47]
+            targetJoint = self.skeleton.hierarchy[2]
             self.targetPosture = self.motion.postures[targetFrame].copy()
             self.targetPosture.setNodeOrientation(targetJoint, self.targetPosture.getJointTransMatrix(targetJoint) @ getXRotMatrix(90))
             self.motion = motionWarp(self.motion, self.targetPosture, targetFrame, 80, 130)
 
         # motion stiching
-        # self.motion = 
+        motion2 = readBVHfile("bvhFiles/02_04_bend.bvh")[1]
+        self.motion = motionStitch(self.motion, motion2, motion2.frames)
+
     def createVertexArraySeparate(self, size,r):
         varr = np.array([
             (0,0,1),
