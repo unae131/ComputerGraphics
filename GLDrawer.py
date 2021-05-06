@@ -28,6 +28,10 @@ class GlDrawer():
         self.targetJoint = self.kine_skel.hierarchy[self.targetJointIdx]
         self.targetPos = targetPos
 
+        # self.motion = timeWarp(self.motion, halfScale, end_t= 2*self.motion.frames)
+        # self.motion = timeWarp(self.motion, doubleScale)
+        self.motion = timeWarp(self.motion, sinScale)
+
     def createVertexArraySeparate(self, size,r):
         varr = np.array([
             (0,0,1),
@@ -363,11 +367,10 @@ class GlDrawer():
             glPopMatrix()
 
         # timeWarp
-        glPushMatrix()
-        self.setObjectColor(255,0,255)
-        timeWarpedMotion = timeWarp(self.motion, sinScale)
-        self.drawBody(self.skeleton, timeWarpedMotion)
-        glPopMatrix()
+        # glPushMatrix()
+        # self.setObjectColor(255,0,255)
+        # self.drawBody(self.skeleton, self.timeWarpedMotion)
+        # glPopMatrix()
 
         # lighting
         if lighting:

@@ -1,6 +1,9 @@
 import numpy as np
+from Model.BvhNode import *
 from Model.Posture import *
 from Model.Motion import *
+from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Slerp
 
 def lerpPositions(position0, position1, t):
     position0 = np.array(position0)
@@ -8,50 +11,40 @@ def lerpPositions(position0, position1, t):
 
     return (1-t) * position0 + t * position1
 
-def slerpOrientations(R0, R1, t):
-    R0 = np.array(R0)[:3,:3]
-    R1 = np.array(R1)[:3,:3]
+def slerpEulerAngles(rotDir, a0, a1, t): # 0~1
+    rot_matrices = R.from_euler(rotDir, [a0, a1], degrees=True)
+    rot_tiems = [0,1]
+    slerp = Slerp(rot_tiems, rot_matrices)
 
-    diff = R0.T @ R1
+    times = [t]
 
-    # log
-    theta = t * np.arccos((diff.trace() - 1)/2)
-    sinTh = np.sin(theta)
+    interpAngle = slerp(times).as_euler(rotDir, degrees=True).reshape(3,)
 
-    # TODO
-    if sinTh == 0:
-        R = np.eye(4)
-        # print("theta is k*pi(",theta, ") in slerp")
-        if theta == 0:
-            R[:3,:3] = R0
-        else:
-            R[:3,:3] = R1
-        return R
-
-    vec = np.array([(diff[2][1] - diff[1][2]),
-                    (diff[0][2] - diff[2][0]),
-                    (diff[1][0] - diff[0][1])]) / ( 2 * sinTh)
-    
-    # exp
-    cosTh = np.cos(theta)
-    _cosTh = 1 - cosTh
-    u = vec / np.linalg.norm(vec)
-    expR = np.array([[cosTh + u[0]**2 * _cosTh, u[0] * u[1] * _cosTh - u[2] * sinTh, u[0] * u[2] * _cosTh + u[1] * sinTh],
-                [u[1] * u[0] * _cosTh + u[2] * sinTh, cosTh + u[1]**2 * _cosTh, u[1] * u[2] * _cosTh-u[0] * sinTh],
-                [u[2] * u[0] * _cosTh - u[1] * sinTh, u[2] * u[1] * _cosTh + u[0] * sinTh, cosTh + u[2]**2 * _cosTh]])
-
-    slerped = np.eye(4)
-    slerped[:3,:3] = R0 @ expR
-
-    return slerped
+    return interpAngle
 
 def interpolatePostures(P0, P1, t):
+    skelNodes = P0.skeleton.hierarchy
     interPosture = Posture(P0.skeleton, P0.data)
     interPosture.data[:3] = lerpPositions(P0.getRootWorldPosition(), P1.getRootWorldPosition(), t)
-    interPosture.linkTransMatrices = np.array(P0.linkTransMatrices)
+    
+    i = -1
+    for node in skelNodes:
+        if node.type == BvhNode.TYPE_END_SITE:
+            continue
 
-    for i in range(len(P0.jointTransMatrices)):
-        interPosture.jointTransMatrices[i] = slerpOrientations(P0.jointTransMatrices[i], P1.jointTransMatrices[i], t)
+        i+=1
+
+        rotDir = ""
+        for ch in node.channels[-3:]:
+            
+            if ch == BvhNode.CH_XROTATION:
+                rotDir += 'x'
+            elif ch == BvhNode.CH_YROTATION:
+                rotDir += 'y'
+            else:
+                rotDir += 'z'
+        interPosture.data[i*3+3: i*3 + 6] = slerpEulerAngles(rotDir, P0.data[i*3+3: i*3 + 6], P1.data[i*3+3:i*3+6], t)
+        
     return interPosture
 
 def timeWarp(motion, scale_function, start_t = 0, end_t = 198):
@@ -64,11 +57,8 @@ def timeWarp(motion, scale_function, start_t = 0, end_t = 198):
     for t in range(start_t, end_t):
         i+=1
         frame = scale_function(t)
-
         if frame >= motion.frames or frame < 0:
-            newMotion.frames = i
-            newMotion.postures = newMotion.postures[:i]
-            return newMotion
+            break
 
         if frame % 1 == 0:
             newMotion.postures[i] = motion.getPosture(int(frame))
@@ -78,10 +68,16 @@ def timeWarp(motion, scale_function, start_t = 0, end_t = 198):
         p1 = motion.getPosture(int(frame) + 1)
         newMotion.postures[i] = interpolatePostures(p0, p1, frame % 1)
     
+    newMotion.frames = i
+    newMotion.postures = newMotion.postures[:i]
+    
     return newMotion
 
 def doubleScale(t):
     return 2*t
+
+def halfScale(t):
+    return 0.5*t
 
 def sinScale(t):
     return 198 * np.sin(np.pi / 2 * 1/198 * t)
