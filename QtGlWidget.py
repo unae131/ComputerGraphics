@@ -2,11 +2,13 @@ from GlDrawer import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QOpenGLWidget
 import platform
+from MatplotDrawer import *
  
 class QtGlWidget(QOpenGLWidget):
     def  __init__(self, fileName, label, slider, parent = None):
         super(QtGlWidget, self).__init__(parent)
         self.glDrawer = GlDrawer(fileName, kinematics=True,targetPos=[0.,0.,0.])
+        # self.matplotDrawer = MatplotDrawer(self.glDrawer.skeleton, self.glDrawer.motion)
         self.label = label
         self.slider = slider
         self.mousePressed = False
@@ -18,6 +20,7 @@ class QtGlWidget(QOpenGLWidget):
 
     def paintGL(self):
         self.glDrawer.render()
+        # self.matplotDrawer.drawPosture(self.glDrawer.skeleton, self.glDrawer.motion.postures[self.glDrawer.curFrame])
         self.label.setText(str(self.glDrawer.curFrame)+"/" + str(self.glDrawer.motion.frames-1))
         self.slider.setValue(self.glDrawer.curFrame)
         self.update()

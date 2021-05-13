@@ -2,3 +2,4 @@
 *.pyc
 Model/__pycache__/BvhNode.cpython-37.pyc
 Model/__pycache__/Posture.cpython-37.pyc
+*.pyc
