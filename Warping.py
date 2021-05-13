@@ -12,7 +12,7 @@ def lerpPositions(position0, position1, t):
 
     return (1-t) * position0 + t * position1
 
-def slerpMatrix(rotDir, R0, R1, t): # 0~1
+def slerpMatrix(R0, R1, t): # 0~1
     rot_matrices = R.from_matrix([R0[:3,:3], R1[:3,:3]])
     rot_tiems = [0,1]
     slerp = Slerp(rot_tiems, rot_matrices)
@@ -35,17 +35,7 @@ def interpolatePostures(P0, P1, t): # t : 0~1, have same skel
         if node.type == BvhNode.TYPE_END_SITE:
             continue
 
-        rotDir = ""
-        for ch in node.channels[-3:]:
-            
-            if ch == BvhNode.CH_XROTATION:
-                rotDir += 'x'
-            elif ch == BvhNode.CH_YROTATION:
-                rotDir += 'y'
-            else:
-                rotDir += 'z'
-
-        newM = slerpMatrix(rotDir,P0.getJointTransMatrix(node), P1.getJointTransMatrix(node), t)
+        newM = slerpMatrix(P0.getJointTransMatrix(node), P1.getJointTransMatrix(node), t)
         newP.setNodeOrientation(node, newM)
         
     return newP
@@ -64,7 +54,7 @@ def timeWarp(motion, scale_function, start_t = 0, end_t = 298, s = 1):
         frame = scale_function(t) if scale_function != scale else scale_function(t,s)
 
         # print(t, frame, motion.frames)
-        if frame < start_t or frame > end_t:
+        if frame < start_t or frame >= end_t:
             break
 
         if frame % 1 == 0:
@@ -138,6 +128,7 @@ def motionStitch(m1, m2, length):
     return stitched
 
 def blendMotions(m1, m2, m1_step_len, m2_step_len): # length of two motions are same
+    # TODO 수정 필요
     m1_step = Motion(m1.skeleton, frames = m1_step_len)
     m1_step.postures = m1.postures[-m1_step_len:]
 
@@ -159,7 +150,8 @@ def blendMotions(m1, m2, m1_step_len, m2_step_len): # length of two motions are 
     
     interp_postures = np.full(length, None)
     for t in range(length):
-        c = cosTransition(t, length)
+        c = cosTransition(t, length = length)
+        # c = herimte(t, length)
         interp_postures[t] = add(scalarMult(c, scaled_m1_step.postures[t]),
                                  scalarMult((1-c), scaled_m2_step.postures[t]))
 
@@ -174,6 +166,9 @@ def blendMotions(m1, m2, m1_step_len, m2_step_len): # length of two motions are 
 
     return blend
 
+def herimte(f1, f2, t):
+    return (-2 * t**3 + 3 * t**2) + (t**3 - 2*t**2 + t)*f1*t + (t**3 - t**2) * f2*t
+
 def scale(t, s):
     return s*t
 
@@ -184,7 +179,7 @@ def halfScale(t):
     return 0.5*t
 
 def sinScale(t):
-    return 299 * (np.sin(np.pi * t / 299 - np.pi/2) + 1)
+    return 298/2 * (np.sin(np.pi * t / 298 - np.pi/2) + 1)
 
 def cosTransition(t, length = 484):
     return 1/2 * np.cos(np.pi/length * t) + 1/2
