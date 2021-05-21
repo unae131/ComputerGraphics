@@ -101,6 +101,26 @@ class Ui_MainWindow(object):
         self.radioButton.setChecked(False)
         self.radioButton.clicked.connect(self.on_toggle_mode)
 
+        self.springLineEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.springLineEdit.setObjectName("springLineEdit")
+        self.springLineEdit.setGeometry(QtCore.QRect(390, 455, 50, 20))
+        self.springLineEdit.textChanged.connect(self.onSpringChanged)
+
+        self.springBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.springBtn.setObjectName("springBtn")
+        self.springBtn.setGeometry(QtCore.QRect(435, 450, 90, 30))
+        self.springBtn.clicked.connect(self.onSpringClicked)
+
+        self.timestepLineEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.timestepLineEdit.setObjectName("timestepLineEdit")
+        self.timestepLineEdit.setGeometry(QtCore.QRect(525, 455, 50, 20))
+        self.timestepLineEdit.textChanged.connect(self.onTimestepChanged)
+
+        self.timestepBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.timestepBtn.setObjectName("timestepBtn")
+        self.timestepBtn.setGeometry(QtCore.QRect(570, 450, 105, 30))
+        self.timestepBtn.clicked.connect(self.onTimestepClicked)
+
         self.widget = QtWidgets.QWidget(self.centralwidget)
         self.widget.setGeometry(QtCore.QRect(10, 400, 193, 33))
         self.widget.setObjectName("widget")
@@ -148,6 +168,11 @@ class Ui_MainWindow(object):
         self.timeWarp2xBtn.setText(_translate("MainWindow", "2x"))
         self.timeWarp0_5xBtn.setText(_translate("MainWindow", "0.5x"))
         self.timeWarpSinxBtn.setText(_translate("MainWindow", "Sinx"))
+        self.springLineEdit.setText(_translate("MainWindow", str(self.openGLWidget.glDrawer.sim.ks)+" " + str(self.openGLWidget.glDrawer.sim.kd)))
+        self.springBtn.setText(_translate("MainWindow", "Spring coef"))
+        self.timestepLineEdit.setText(_translate("MainWindow", str(self.openGLWidget.glDrawer.sim.timestep)))
+        self.timestepBtn.setText(_translate("MainWindow", "Sim Timestep"))
+
         
     def updateLabel(self, value):
         self.openGLWidget.glDrawer.curFrame = value
@@ -188,6 +213,12 @@ class Ui_MainWindow(object):
     def onMtWarpLineChagned(self, frame):
         self.mtWarpLineEdit.setText(frame)
 
+    def onSpringChanged(self, frame):
+        self.springLineEdit.setText(frame)
+
+    def onTimestepChanged(self, frame):
+        self.timestepLineEdit.setText(frame)
+        
     def onClicked(self, frame):
         self.openGLWidget.glDrawer.curFrame = int(self.lineEdit.text())
 
@@ -215,6 +246,14 @@ class Ui_MainWindow(object):
 
     def onJointClicked(self, frame):
         self.openGLWidget.glDrawer.setTargetJoint(int(self.jointLineEdit.text()))
+
+    def onSpringClicked(self, frame):
+        a = self.springLineEdit.text().split(" ")
+        self.openGLWidget.glDrawer.sim.testInit(int(a[0]), int(a[1]))
+
+    def onTimestepClicked(self, frame):
+        a = float(self.timestepLineEdit.text())
+        self.openGLWidget.glDrawer.sim.testInit(timestep= a)
 
     def zoomIn_callback(self):
         self.openGLWidget.glDrawer.camera.zoom(0.5)

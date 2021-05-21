@@ -2,7 +2,7 @@ import numpy as np
 from Matrix import *
 
 class Camera():
-    def __init__(self, eye = [0.,-3.,5.], center = [0.,0.,0.], up = [0.,1.,0.]):
+    def __init__(self, eye = [0.,-4.,6.], center = [0.,-1.,0.], up = [0.,1.,0.]):
         eye = np.array(eye, dtype=np.float32)
         center = np.array(center,dtype=np.float32)
         up = np.array(up,dtype=np.float32)

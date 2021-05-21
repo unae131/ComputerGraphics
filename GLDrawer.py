@@ -3,6 +3,9 @@ from BvhParser import *
 from Matrix import *
 from Warping import *
 from Model.PostureOperator import *
+from Dynamics.Force import *
+from Dynamics.ParticleSystem import *
+from Dynamics.Simulator import *
 
 import math
 import numpy as np
@@ -18,7 +21,7 @@ class GlDrawer():
         self.curFrame = 0
         
         # TODO fill 고치기
-        self.fill = False
+        self.fill = True
         self.playing = False
 
         self.kinematics = kinematics
@@ -40,13 +43,16 @@ class GlDrawer():
         # self.motion = timeWarp(self.motion, sinScale, end_t= self.motion.frames)
 
         # motion stiching
-        motion2 = readBVHfile("bvhFiles/02_04_run.bvh")[1]
+        # motion2 = readBVHfile("bvhFiles/02_04_run.bvh")[1]
         # self.motion = motionStitch(self.motion, motion2, motion2.frames-1)
 
         # blend motion
-        motion2 = motionStitch(self.motion, motion2, motion2.frames-1).cutMotion(len(self.motion.postures), len(self.motion.postures) + len(motion2.postures)-1)
-        self.motion = blendMotions(self.motion, motion2, 78, 47)
+        # motion2 = motionStitch(self.motion, motion2, motion2.frames-1).cutMotion(len(self.motion.postures), len(self.motion.postures) + len(motion2.postures)-1)
+        # self.motion = blendMotions(self.motion, motion2, 78, 47)
     
+        self.sim = Simulator()
+        self.sim.testInit()
+
     def drawOriginal(self):
         self.motion = self.origin_motion
         self.motionWarp = False
@@ -161,10 +167,10 @@ class GlDrawer():
         glVertex3fv(np.array(p1))
         glEnd()
 
-    def drawBoxGlobal(self, x, y, z):
+    def drawBoxGlobal(self, x, y, z, scale = 0.08):
         glPushMatrix()
         glTranslatef(x,y,z)
-        glScalef(0.08,0.08,0.08)
+        glScalef(scale, scale, scale)
         point1 = [0.5, 0.5, -0.5]
         point2 = [0.5, 0.5, 0.5]
         point3 = [0.5, -0.5, 0.5]
@@ -332,7 +338,7 @@ class GlDrawer():
     def switchPlaying(self):
         self.playing = not self.playing
 
-    def setViewPort(self, fovy = 140, aspect = 1, zNear = 1, zFar = 20):
+    def setViewPort(self, fovy = 100, aspect = 1, zNear = 1, zFar = 10):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(fovy, aspect, zNear, zFar)
@@ -447,6 +453,9 @@ class GlDrawer():
         if self.skeleton is not None and self.playing:
             self.curFrame += 1
             self.curFrame %= self.motion.frames
+
+        # dynamics
+        self.sim.testRender(self)
 
     def setTargetPos(self, targetPos):
         self.targetPos = np.array(targetPos, dtype = np.float64)
