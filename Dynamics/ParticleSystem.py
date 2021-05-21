@@ -40,18 +40,17 @@ class ParticleSystem():
 
         for p in self.particles:
             constraint1 = np.dot((p.position- P), N)
-            constratin2 = np.dot(N, p.velocity)
+            constraint2 = np.dot(N, p.velocity)
 
-            if np.linalg.norm(constraint1) < self.EPSILON and np.linalg.norm(constratin2) < self.EPSILON: # contact
-                print("contacting", p.position)
+            if np.linalg.norm(constraint1) < self.EPSILON and np.linalg.norm(constraint2) < self.EPSILON: # contact
                 contactingParticles.append(p)
 
-            elif constraint1 < self.EPSILON and constratin2 < 0: # collision
+            elif constraint1 < self.EPSILON and constraint2 < 0: # collision
                 self.responseCollision(p, N)
                 contactingParticles.append(p)
         
-        Contact(contactingParticles).apply()
-        Friction(contactingParticles).apply()
+        Contact(contactingParticles, norm_vec = [0.,1.,0.]).apply()
+        Friction(contactingParticles, norm_vec = [0.,1.,0.]).apply()
     
     def responseCollision(self, p, N, k = .8):
         Vn = np.dot(N, p.velocity) * N

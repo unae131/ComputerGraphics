@@ -21,9 +21,9 @@ class Simulator():
         arr = system.getArray()
         deltaX = timestep * self.derivative(arr)
 
-        tmpArr = np.array(arr)
-        tmpArr[:,:6] += deltaX/2
-        fmid = tmpArr[:,:6] + (timestep/2) * (self.derivative(tmpArr) / 2)
+        Xarr = np.array(arr)
+        Xarr[:,:6] += deltaX/2
+        fmid = self.derivative(Xarr) / 2
 
         newState = arr[:,:6] + timestep * fmid
         system.setParticles(newState)
@@ -72,8 +72,8 @@ class Simulator():
         # pos = sys.particles[-2].position
         # vel = sys.particles[-2].velocity
 
-        self.eulerstep(sys, self.timestep)
-        # self.midpointMethod(sys, self.timestep)
+        # self.eulerstep(sys, self.timestep)
+        self.midpointMethod(sys, self.timestep)
         # sys.particles[-2].position = pos
         # sys.particles[-2].velocity = vel
         
