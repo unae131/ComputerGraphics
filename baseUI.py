@@ -249,7 +249,7 @@ class Ui_MainWindow(object):
 
     def onSpringClicked(self, frame):
         a = self.springLineEdit.text().split(" ")
-        self.openGLWidget.glDrawer.sim.testInit(int(a[0]), int(a[1]))
+        self.openGLWidget.glDrawer.sim.testInit(float(a[0]), float(a[1]))
 
     def onTimestepClicked(self, frame):
         a = float(self.timestepLineEdit.text())

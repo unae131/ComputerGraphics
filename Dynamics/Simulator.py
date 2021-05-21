@@ -41,7 +41,7 @@ class Simulator():
         sys.particles.append(Particle([5.,2.,0.], [-1, -2, 0]))
 
         sys.particles.append(Particle([2.,4.,0.]))
-        sys.particles.append(Particle([2.,3.,0.]))
+        # sys.particles.append(Particle([2.,3.,0.]))
         
         sys.forces.append(Gravity(np.array(sys.particles), [0.,-9.8,0.]))
 
@@ -60,13 +60,13 @@ class Simulator():
     def testRender(self, drawer):
         sys = self.system
 
+        for p in sys.particles:
+            drawer.drawBoxGlobal(p.position[0], p.position[1], p.position[2])
+
         for i in range(3):
             for j in range(1,4):
                 drawer.drawLineGlobal(sys.particles[i].position, sys.particles[j].position)
-        
-        tmp = np.array(sys.particles[-4].position)
-        tmp[1] += .5
-        drawer.drawLineGlobal(sys.particles[-4].position, tmp)
+
         drawer.drawLineGlobal(sys.particles[-2].position, sys.particles[-1].position)
 
         # pos = sys.particles[-2].position
@@ -76,6 +76,4 @@ class Simulator():
         # self.midpointMethod(sys, self.timestep)
         # sys.particles[-2].position = pos
         # sys.particles[-2].velocity = vel
-
-        drawer.drawBoxGlobal(sys.particles[-5].position[0], sys.particles[-5].position[1], sys.particles[-5].position[2])
         
