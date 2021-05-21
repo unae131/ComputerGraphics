@@ -72,8 +72,13 @@ class Simulator():
         # pos = sys.particles[-2].position
         # vel = sys.particles[-2].velocity
 
-        # self.eulerstep(sys, self.timestep)
-        self.midpointMethod(sys, self.timestep)
+        iters = round(drawer.motion.frame_time / self.timestep)
+        if iters == 0:
+            iters = 1
+        # print(iters)
+        for i in range(iters):
+            self.eulerstep(sys, self.timestep)
+        # self.midpointMethod(sys, self.timestep)
         # sys.particles[-2].position = pos
         # sys.particles[-2].velocity = vel
         
