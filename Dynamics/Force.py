@@ -78,5 +78,8 @@ class Friction(Force):
             
             Vn = np.dot(self.norm_vec, p.velocity) * self.norm_vec
             Vt = p.velocity - Vn
-            p.force -= self.UK * np.linalg.norm(Fn) * Vt / np.linalg.norm(Vt)
+            norm_Vt = np.linalg.norm(Vt)
+
+            if norm_Vt != 0:
+                p.force -= self.UK * np.linalg.norm(Fn) * Vt / np.linalg.norm(Vt)
 
