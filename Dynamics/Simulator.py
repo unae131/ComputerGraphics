@@ -78,7 +78,8 @@ class Simulator():
         # print(iters)
         for i in range(iters):
             self.eulerstep(sys, self.timestep)
-        # self.midpointMethod(sys, self.timestep)
+            # self.midpointMethod(sys, self.timestep)
         # sys.particles[-2].position = pos
         # sys.particles[-2].velocity = vel
+        
         

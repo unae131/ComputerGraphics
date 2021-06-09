@@ -7,7 +7,6 @@ from Dynamics.Force import *
 from Dynamics.ParticleSystem import *
 from Dynamics.Simulator import *
 
-import math
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *

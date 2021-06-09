@@ -1,5 +1,5 @@
-from QtGlWidget import *
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQT.QtGlWidget import *
+from PyQt5 import QtCore, QtWidgets
 from Warping import *
 
 class Ui_MainWindow(object):
@@ -260,12 +260,3 @@ class Ui_MainWindow(object):
 
     def zoomOut_callback(self):
         self.openGLWidget.glDrawer.camera.zoom(-0.5)    
-
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow, 2)
-    MainWindow.show()
-    sys.exit(app.exec_())

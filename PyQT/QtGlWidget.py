@@ -1,8 +1,6 @@
-from GlDrawer import *
-from PyQt5.QtCore import Qt
+from Drawer.GlDrawer import *
 from PyQt5.QtWidgets import QOpenGLWidget
-import platform
-from MatplotDrawer import *
+from Drawer.MatplotDrawer import *
  
 class QtGlWidget(QOpenGLWidget):
     def  __init__(self, fileName, label, slider, parent = None):
