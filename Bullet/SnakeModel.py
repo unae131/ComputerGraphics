@@ -19,7 +19,7 @@ class Snake(Model):
         nodeId = self.createBox(nodeLength/2)
         self.id = self.createModel(nodeId, 1, [0,0,0.5], p.getQuaternionFromEuler([np.pi/2,0,0]))
 
-        self.changeDynamics()
+        # self.changeDynamics()
         self.waveFront = 0.
 
     def createModel(self, nodeId, baseMass, basePosition, baseQuaternionOrientation):
@@ -81,7 +81,7 @@ class Snake(Model):
 
         p.stepSimulation()
 
-    def pdControlMove(self, controller, targetPositions = None, targetVelocities = None):
+    def pdControlMove(self, pd_func, targetPositions = None, targetVelocities = None):
         numJoints = p.getNumJoints(self.id)
 
         if targetPositions is None: # default sin move
@@ -107,7 +107,7 @@ class Snake(Model):
         
         torques = []
         for i in range(numJoints):
-            torques.append(controller.computeTorque(curPositions[i], curVelocities[i], targetPositions[i], targetVelocities[i]))
+            torques.append(pd_func(curPositions[i], curVelocities[i], targetPositions[i], targetVelocities[i]))
 
         p.setJointMotorControlMultiDofArray(self.id,
                                             self.jointIndices,

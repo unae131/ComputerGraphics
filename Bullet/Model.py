@@ -43,6 +43,6 @@ class Model(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def pdControlMove(self, controller, targetPositions, targetVelocities = None):
+    def pdControlMove(self, pd_func, targetPositions, targetVelocities = None):
         pass
         

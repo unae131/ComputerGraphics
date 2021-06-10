@@ -2,6 +2,7 @@ from Dynamics.PDController import PDController
 import pybullet as p
 import pybullet_data
 from Drawer.GlDrawer import *
+from Bullet.SnakeModel import *
 
 class DrawerConnector():
     def __init__(self, timestep = 0.03, pdControl = True):
@@ -16,19 +17,22 @@ class DrawerConnector():
         p.setTimeStep(timestep)
 
         if pdControl:
-            self.pdcontroller = PDController(500, 1)
+            self.pdController = PDController(500, 1)
         else:
-            self.pdcontroller = None
-        
+            self.pdController = None
+
+        # for test
+        self.addModel(Snake(nodeLength = 0.25))
+
     def addModel(self, model):
         self.models.append(model)
 
     def render(self, draw_func = None):
         for model in self.models:
-            if self.pdcontroller is None:
+            if self.pdController is None:
                 model.move()
             else:
-                model.pdControlMove(self.pdcontroller)
+                model.pdControlMove(self.pdController.computeTorque)
         
         if draw_func is not None:
             for model in self.models:
