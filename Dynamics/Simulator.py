@@ -3,7 +3,11 @@ from Dynamics.ParticleSystem import Particle, ParticleSystem
 import  numpy as np
 
 class Simulator():
-    def eulerstep(self, system, timestep):
+    def __init__(self, timestep = 0.003):
+        self.timestep = timestep
+
+    def eulerstep(self, system):
+        timestep = self.timestep
         system.calculateForce()
         arr = system.getArray()
         newState = arr[:,:6] + timestep * self.derivative(arr)
@@ -16,7 +20,8 @@ class Simulator():
 
         return np.concatenate((vel, acc), axis = 1)
 
-    def midpointMethod(self, system, timestep):
+    def midpointMethod(self, system):
+        timestep = self.timestep
         system.calculateForce()
         arr = system.getArray()
         deltaX = timestep * self.derivative(arr)
@@ -29,9 +34,8 @@ class Simulator():
         system.setParticles(newState)
         system.time += timestep
 
-    def testInit(self, ks = 650, kd = 5, timestep = 0.003):
+    def testInit(self, ks = 650, kd = 5):
         self.system = sys =  ParticleSystem([0.,1.,0.])
-        self.timestep = timestep
         self.ks = ks
         self.kd = kd
         sys.particles.append(Particle([0.,1.,0.]))
@@ -77,8 +81,8 @@ class Simulator():
             iters = 1
         # print(iters)
         for i in range(iters):
-            self.eulerstep(sys, self.timestep)
-            # self.midpointMethod(sys, self.timestep)
+            self.eulerstep(sys)
+            # self.midpointMethod(sys)
         # sys.particles[-2].position = pos
         # sys.particles[-2].velocity = vel
         

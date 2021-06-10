@@ -73,7 +73,7 @@ class Snake(Model):
         for i in range(self.jointNum):
             p.changeDynamics(self.id, i, lateralFriction=lateralFriction, anisotropicFriction=anistropicFriction)
 
-    def move(self, steering=0.0, forces = 10, dt = 1./1200., wavePeriod = 1.5, waveLength = 4, waveAmplitude = 0.8):
+    def move(self, steering=0.0, forces = 10, dt = 1./1200., wavePeriod = 1.5, waveLength = 4, waveAmplitude = 0.4):
         segmentLength = self.gap + self.nodeLength
         scaleStart = 1.0
         waveFront = self.waveFront

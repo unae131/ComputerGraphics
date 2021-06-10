@@ -21,7 +21,7 @@ class Ui_MainWindow(object):
         self.openGLWidget = QtGlWidget("bvhFiles/02_04_walk.bvh", label = self.label, slider = self.horizontalSlider, parent = self.centralwidget)
         self.openGLWidget.setGeometry(QtCore.QRect(-1, -21, 721, 411))
         self.openGLWidget.setObjectName("openGLWidget")
-        self.openGLWidget.show()
+        # self.openGLWidget.show()
 
         self.horizontalSlider.setRange(0,self.openGLWidget.glDrawer.motion.frames-1)
         self.horizontalSlider.setPageStep(5)
@@ -95,11 +95,11 @@ class Ui_MainWindow(object):
         self.timeWarpSinxBtn.setChecked(False)
         self.timeWarpSinxBtn.clicked.connect(self.on_toggle_sinx)
 
-        self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
-        self.radioButton.setGeometry(QtCore.QRect(520, 407, 100, 20))
-        self.radioButton.setObjectName("radioButton")
-        self.radioButton.setChecked(False)
-        self.radioButton.clicked.connect(self.on_toggle_mode)
+        self.wireBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.wireBtn.setGeometry(QtCore.QRect(520, 407, 100, 20))
+        self.wireBtn.setObjectName("wireBtn")
+        self.wireBtn.setChecked(False)
+        self.wireBtn.clicked.connect(self.on_toggle_mode)
 
         self.springLineEdit = QtWidgets.QLineEdit(self.centralwidget)
         self.springLineEdit.setObjectName("springLineEdit")
@@ -153,7 +153,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "motion blending"))
         self.pushButton.setText(_translate("MainWindow", "시작/멈춤"))
         self.label.setText(_translate("MainWindow", str(self.openGLWidget.glDrawer.curFrame)+"/"+str(self.openGLWidget.glDrawer.motion.frames)))
-        self.radioButton.setText(_translate("MainWindow", "Wire Frame"))
+        self.wireBtn.setText(_translate("MainWindow", "Wire Frame"))
         self.lineEdit.setText(_translate("MainWindow", "0"))
         self.pushButton_3.setText(_translate("MainWindow", "이동"))
         self.zoomInButton.setText(_translate("MainWindow", "+"))
@@ -177,11 +177,8 @@ class Ui_MainWindow(object):
     def updateLabel(self, value):
         self.openGLWidget.glDrawer.curFrame = value
 
-    def on_toggle_mode(self):
-        if self.radioButton.isChecked():
-            self.openGLWidget.glDrawer.fill = False
-        else:
-            self.openGLWidget.glDrawer.fill = True
+    def on_toggle_mode(self, frame):
+        self.openGLWidget.glDrawer.fill = not self.openGLWidget.glDrawer.fill
 
     def on_toggle_2x(self):
         if self.timeWarp2xBtn.isChecked():

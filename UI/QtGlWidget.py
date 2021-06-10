@@ -1,7 +1,8 @@
 from Drawer.GlDrawer import *
 from PyQt5.QtWidgets import QOpenGLWidget
+from PyQt5.QtCore import QTimer
 from Drawer.MatplotDrawer import *
- 
+
 class QtGlWidget(QOpenGLWidget):
     def  __init__(self, fileName, label, slider, parent = None):
         super(QtGlWidget, self).__init__(parent)
@@ -15,6 +16,11 @@ class QtGlWidget(QOpenGLWidget):
 
     def initUI(self):
         self.setMouseTracking(True)
+        
+        # # Timer 설정
+        # self.timer = QTimer(self)
+        # self.timer.start(self.glDrawer.motion.frame_time)
+        # self.timer.timeout.connect(self.timeout_run)
 
     def paintGL(self):
         self.glDrawer.render()
@@ -22,6 +28,12 @@ class QtGlWidget(QOpenGLWidget):
         self.label.setText(str(self.glDrawer.curFrame)+"/" + str(self.glDrawer.motion.frames-1))
         self.slider.setValue(self.glDrawer.curFrame)
         self.update()
+
+    # def timeout_run(self):
+    #     self.glDrawer.render()
+    #     self.timer = QTimer(self)
+    #     self.timer.start(self.glDrawer.motion.frame_time)
+    #     self.timer.timeout.connect(self.timeout_run)
  
     def mousePressEvent(self, event):
         self.mousePressed = True
@@ -33,14 +45,19 @@ class QtGlWidget(QOpenGLWidget):
 
     def mouseMoveEvent(self, e):
         if self.mousePressed:
-            x_offset = 0.03*(e.x() - self.x)
-            y_offset = 0.05*(e.y() - self.y)
+            x_offset = 0.2 * (e.x() - self.x)
+            y_offset = 0.2 * (e.y() - self.y)
+
+            if abs(x_offset) >= abs(y_offset):
+                y_offset = 0
+            else:
+                x_offset = 0
 
             if not self.panning:
                 self.glDrawer.camera.orbit(x_offset, y_offset)
 
             else:
-                self.glDrawer.camera.panning(x_offset, - y_offset)
+                self.glDrawer.camera.panning(0.5*x_offset, - 0.5*y_offset)
 
             self.x = e.x()
             self.y = e.y()

@@ -10,7 +10,7 @@ import time
 if __name__ == "__main__":
     bc = BulletConnector(0.00833333)
 
-    snake = Snake(nodeLength = 0.5, gap = 0.)
+    snake = Snake(nodeLength = 0.25, gap = 0.)
 
     bc.addModel(snake)
     dt = 0.3

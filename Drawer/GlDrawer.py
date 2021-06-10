@@ -55,7 +55,7 @@ class GlDrawer():
         self.sim.testInit()
         
         self.bullet = BulletConnector(self.motion.frame_time)
-        self.bullet.addModel(Snake())
+        self.bullet.addModel(Snake(nodeLength = 0.25))
 
     def drawOriginal(self):
         self.motion = self.origin_motion
@@ -225,7 +225,7 @@ class GlDrawer():
         glEnd()
         glPopMatrix()
     
-    def drawLink(self, offset):
+    def drawLink(self, offset, size = 1.):
         x = offset[0]
         y = offset[1]
         z = offset[2]
@@ -233,8 +233,6 @@ class GlDrawer():
         ab_x = abs(x)
         ab_y = abs(y)
         ab_z = abs(z)
-
-        size = 0.03
 
         glPushMatrix()
 
@@ -348,7 +346,7 @@ class GlDrawer():
     def switchPlaying(self):
         self.playing = not self.playing
 
-    def setViewPort(self, fovy = 100, aspect = 1, zNear = 1, zFar = 10):
+    def setViewPort(self, fovy = 100, aspect = 1, zNear = 1, zFar = 15):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(fovy, aspect, zNear, zFar)
@@ -380,7 +378,7 @@ class GlDrawer():
         glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor)
         glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLightColor)
 
-        lightColor = (0.,0.,1.,1.)
+        lightColor = (1.,1.,1.,1.)
         glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor)
         glLightfv(GL_LIGHT1, GL_SPECULAR, lightColor)
         glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLightColor)
@@ -439,6 +437,16 @@ class GlDrawer():
 
         glPopMatrix()
 
+        if self.bullet is not None:
+            # pybullet
+            glPushMatrix()
+            glRotatef(-90, 1, 0, 0)
+            glRotatef(-90, 0, 0, 1)
+            # glScalef(0.5,0.5,0.5)
+            self.setObjectColor(0,200,200)
+            self.bullet.render(self.drawBoxGlobal)
+            glPopMatrix()
+
         # lighting
         if lighting:
             self.unsetLighting()
@@ -466,14 +474,6 @@ class GlDrawer():
 
         # dynamics
         self.sim.testRender(self)
-
-        # pybullet
-        glPushMatrix()
-        glRotatef(-90, 1, 0, 0)
-        glRotatef(-90, 0, 0, 1)
-        # glScalef(0.5,0.5,0.5)
-        self.bullet.render(self.drawBoxGlobal)
-        glPopMatrix()
 
     def setTargetPos(self, targetPos):
         self.targetPos = np.array(targetPos, dtype = np.float64)
