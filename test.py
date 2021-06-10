@@ -1,14 +1,9 @@
-import pybullet as p
-import numpy as np
-from Pybullet.Model import *
-from Pybullet.SnakeModel import *
-from Pybullet.BulletConnector import *
-from scipy.spatial.transform import Rotation as R
-
-import time
+from Bullet.Model import *
+from Bullet.SnakeModel import *
+from Bullet.DrawerConnector import *
 
 if __name__ == "__main__":
-    bc = BulletConnector(0.00833333)
+    bc = DrawerConnector(0.00833333, True)
 
     snake = Snake(nodeLength = 0.25, gap = 0.)
 
@@ -16,6 +11,5 @@ if __name__ == "__main__":
     dt = 0.3
 
     while True:
-        bc.render(None)
+        bc.render()
         
-        # drawBoxGlobal(, x, y, z, ori = rotM, scale = 1.)

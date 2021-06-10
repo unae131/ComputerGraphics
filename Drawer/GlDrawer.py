@@ -6,8 +6,8 @@ from Model.PostureOperator import *
 from Dynamics.Force import *
 from Dynamics.ParticleSystem import *
 from Dynamics.Simulator import *
-from Pybullet.BulletConnector import *
-from Pybullet.SnakeModel import *
+from Bullet.DrawerConnector import *
+from Bullet.SnakeModel import *
 
 import numpy as np
 from OpenGL.GL import *
@@ -54,7 +54,7 @@ class GlDrawer():
         self.sim = Simulator()
         self.sim.testInit()
         
-        self.bullet = BulletConnector(self.motion.frame_time)
+        self.bullet = DrawerConnector(self.motion.frame_time)
         self.bullet.addModel(Snake(nodeLength = 0.25))
 
     def drawOriginal(self):

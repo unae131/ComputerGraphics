@@ -1,9 +1,6 @@
-from Dynamics.RigidSystem import computeTorque
 from abc import *
 import pybullet as p
 import numpy as np
-from Dynamics.RigidSystem import *
-
 
 class Model(metaclass=ABCMeta):
     def __init__(self, linkIndices, jointIndices):
@@ -41,34 +38,11 @@ class Model(metaclass=ABCMeta):
 
         return positions, matrice
 
-    def pdControlMove(self, targetPositions, targetVelocities = None):
-        # 3-dof인 것들만 고려함
+    @abstractmethod
+    def move(self):
+        pass
+
+    @abstractmethod
+    def pdControlMove(self, controller, targetPositions, targetVelocities = None):
+        pass
         
-        numJoints = p.getNumJoints(self.id)
-
-        if targetVelocities is None:
-            targetVelocities = np.full((numJoints, 3), 0.)
-
-        curPositions = []
-        curVelocities = []
-
-        for jointState in p.getJointStatesMultiDof(self.id, self.jointIndices):
-            state = list(jointState)
-            
-            axis, ang = p.getAxisAngleFromQuaternion(state[0])
-            rotvec = ang * np.array(axis)
-
-            curPositions.append(np.array(rotvec))
-            curVelocities.append(np.array(state[1]))
-        
-        kp, kd = 500, 1
-        torques = []
-        for i in range(numJoints):
-            torques.append(computeTorque(kp, kd, curPositions[i], curVelocities[i], targetPositions[i], targetVelocities[i]))
-
-        p.setJointMotorControlMultiDofArray(self.id,
-                                            self.jointIndices,
-                                            p.TORQUE_CONTROL,
-                                            forces=torques)
-
-        p.stepSimulation()
