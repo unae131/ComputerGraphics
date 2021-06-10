@@ -5,8 +5,12 @@ from Drawer.GlDrawer import *
 from Bullet.SnakeModel import *
 
 class DrawerConnector():
-    def __init__(self, timestep = 0.03, pdControl = True):
-        self.client = p.connect(p.GUI) # or p.DIRECT for non-graphical version
+    def __init__(self, timestep = 0.03, pdControl = True, gui = False):
+        if gui is True:
+            self.client = p.connect(p.GUI) # or p.DIRECT for non-graphical version
+        else:
+            self.client = p.connect(p.DIRECT)
+
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
         p.loadURDF("plane.urdf")
@@ -16,7 +20,7 @@ class DrawerConnector():
         self.timestep = timestep
         p.setTimeStep(timestep)
 
-        if pdControl:
+        if pdControl is True:
             self.pdController = PDController(500, 1)
         else:
             self.pdController = None

@@ -1,7 +1,6 @@
 import pybullet as p
 import numpy as np
 from Bullet.Model import *
-from scipy.spatial.transform import Rotation as R
 
 class Snake(Model):
     def __init__(self, numNodes=10, nodeLength = 0.5, gap = 0.):
@@ -19,7 +18,7 @@ class Snake(Model):
         nodeId = self.createBox(nodeLength/2)
         self.id = self.createModel(nodeId, 1, [0,0,0.5], p.getQuaternionFromEuler([np.pi/2,0,0]))
 
-        # self.changeDynamics()
+        self.changeDynamics()
         self.waveFront = 0.
 
     def createModel(self, nodeId, baseMass, basePosition, baseQuaternionOrientation):
