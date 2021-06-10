@@ -33,7 +33,7 @@ class QtGlWidget(QOpenGLWidget):
 
     def mouseMoveEvent(self, e):
         if self.mousePressed:
-            x_offset = 0.01*(e.x() - self.x)
+            x_offset = 0.03*(e.x() - self.x)
             y_offset = 0.05*(e.y() - self.y)
 
             if not self.panning:

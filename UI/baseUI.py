@@ -1,4 +1,4 @@
-from PyQT.QtGlWidget import *
+from UI.QtGlWidget import *
 from PyQt5 import QtCore, QtWidgets
 from Warping import *
 

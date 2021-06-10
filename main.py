@@ -1,4 +1,4 @@
-from PyQT.baseUI import *
+from UI.baseUI import *
 
 if __name__ == "__main__":
     import sys
