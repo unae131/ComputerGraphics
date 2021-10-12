@@ -34,23 +34,24 @@ class Simulator():
         system.setParticles(newState)
         system.time += timestep
 
-    def testInit(self, ks = 650, kd = 5):
+    def testInit(self, ks = 650, kd = 5, timestep = 0.003):
+        self.timestep = timestep
         self.system = sys =  ParticleSystem([0.,1.,0.])
         self.ks = ks
         self.kd = kd
-        sys.particles.append(Particle([0.,1.,0.]))
-        sys.particles.append(Particle([1.,1.,0.]))
         sys.particles.append(Particle([0.,2.,0.]))
         sys.particles.append(Particle([1.,2.,0.]))
+        sys.particles.append(Particle([0.,3.,0.]))
+        sys.particles.append(Particle([1.,3.,0.]))
         sys.particles.append(Particle([5.,2.,0.], [-1, -2, 0]))
 
         sys.particles.append(Particle([2.,4.,0.]))
-        # sys.particles.append(Particle([2.,3.,0.]))
+#       # sys.particles.append(Particle([2.,3.,0.]))
         
         sys.forces.append(Gravity(np.array(sys.particles), [0.,-9.8,0.]))
 
-        sys.particles.append(Particle([-4., 2., 0.]))
-        sys.particles.append(Particle([-1., 2., 0.]))
+        # sys.particles.append(Particle([-4., 2., 0.]))
+        # sys.particles.append(Particle([-1., 2., 0.]))
 
         sys.forces.append(DampedSpring(sys.particles[:2], 1, ks, kd))
         sys.forces.append(DampedSpring(sys.particles[2:4], 1, ks, kd))
@@ -58,8 +59,8 @@ class Simulator():
         sys.forces.append(DampedSpring([sys.particles[1], sys.particles[3]], 1, ks, kd))
         sys.forces.append(DampedSpring([sys.particles[0], sys.particles[3]], np.sqrt(2), ks, kd))
         sys.forces.append(DampedSpring(sys.particles[1:3], np.sqrt(2), ks, kd))
-        # sys.forces.append(DampedSpring(sys.particles[:2], .3, ks, kd))
-        sys.forces.append(DampedSpring(sys.particles[-2:], 1, ks, kd))
+#        # sys.forces.append(DampedSpring(sys.particles[:2], .3, ks, kd))
+        # sys.forces.append(DampedSpring(sys.particles[-2:], 1, ks, kd))
 
     def testRender(self, drawer):
         sys = self.system
@@ -71,10 +72,10 @@ class Simulator():
             for j in range(1,4):
                 drawer.drawLineGlobal(sys.particles[i].position, sys.particles[j].position)
 
-        drawer.drawLineGlobal(sys.particles[-2].position, sys.particles[-1].position)
+        # drawer.drawLineGlobal(sys.particles[-2].position, sys.particles[-1].position)
 
-        # pos = sys.particles[-2].position
-        # vel = sys.particles[-2].velocity
+#        # pos = sys.particles[-2].position
+#        # vel = sys.particles[-2].velocity
 
         iters = round(drawer.motion.frame_time / self.timestep)
         if iters == 0:

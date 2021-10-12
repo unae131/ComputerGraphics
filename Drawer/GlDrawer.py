@@ -17,7 +17,9 @@ class GlDrawer():
     def __init__(self, fileName, kinematics = False, targetJointIdx = -1, targetPos = [0,0,0]):
         self.skeleton, self.motion = readBVHfile(fileName)
         self.origin_motion = self.motion
-        self.camera = Camera()
+        # self.camera = Camera(eye = [0.,2.,4.], center = [0.,2.,0.]) # good
+        self.camera = Camera(eye = [0.,-4.,2.], center = [0.,2.,0.]) # for pybullet
+
         self.curFrame = 0
         
         # TODO fill 고치기
@@ -47,6 +49,16 @@ class GlDrawer():
         # self.motion = motionStitch(self.motion, motion2, motion2.frames-1)
 
         # blend motion
+        # motion2 = readBVHfile("bvhFiles/02_04_run.bvh")[1]
+        # motion2_cut = motion2.cutMotion(45, 154)#92)
+        # m1 = self.motion.cutMotion(0,77)
+        # m2 = self.motion.cutMotion(78,197)
+        # m3 = self.motion.cutMotion(198,623)
+        # blended = blendMotions(m2, motion2_cut, 77, 47)
+        # self.motion = motionStitch(m1,blended, 180)
+
+        # blend motion
+        # motion2 = readBVHfile("bvhFiles/02_04_run.bvh")[1]
         # motion2 = motionStitch(self.motion, motion2, motion2.frames-1).cutMotion(len(self.motion.postures), len(self.motion.postures) + len(motion2.postures)-1)
         # self.motion = blendMotions(self.motion, motion2, 78, 47)
     
@@ -292,7 +304,7 @@ class GlDrawer():
         glMultMatrixf(J0.T)
 
         for n in root.children:
-            self.drawBox(n.offset)
+            self.drawLink(n.offset)
             self.drawBodyNode(posture, n) 
 
         glPopMatrix()
@@ -358,7 +370,7 @@ class GlDrawer():
 
         # light0 position
         glPushMatrix()
-        lightPos = (3.,4.,5.,1.)    # try to change 4th element to 0. or 1.
+        lightPos = (3.,4.,5.,0.)    # try to change 4th element to 0. or 1.
         glLightfv(GL_LIGHT0, GL_POSITION, lightPos)
         glPopMatrix()
 
@@ -423,7 +435,7 @@ class GlDrawer():
         if self.skeleton is not None:
             glPushMatrix()
             self.setObjectColor(255,0,0)
-            self.drawBody(self.skeleton, self.motion)
+            # self.drawBody(self.skeleton, self.motion)
             glPopMatrix()
 
         # draw target pos for motion warping
@@ -441,7 +453,7 @@ class GlDrawer():
             glRotatef(-90, 1, 0, 0)
             glRotatef(-90, 0, 0, 1)
             # glScalef(0.5,0.5,0.5)
-            self.setObjectColor(0,200,200)
+            self.setObjectColor(255,255,255)
             self.bullet.render(self.drawBoxGlobal)
             glPopMatrix()
 
@@ -450,20 +462,20 @@ class GlDrawer():
             self.unsetLighting()
 
         # kinematics
-        if self.kinematics:
-            glPushMatrix()
-            self.setObjectColor(255, 255,0)
+        # if self.kinematics:
+        #     glPushMatrix()
+        #     self.setObjectColor(255, 255,0)
             
-            # fk
-            glPushMatrix()
-            glRotatef(90, 0,1,0)
-            glScalef(0.02,0.02,0.02)
-            self.drawJointVelocity(self.skeleton, self.motion, self.targetJointIdx)
-            # self.drawBody(self.kine_skel, self.kine_mot)
-            glPopMatrix()
+        #     # fk
+        #     glPushMatrix()
+        #     glRotatef(90, 0,1,0)
+        #     glScalef(0.02,0.02,0.02)
+        #     self.drawJointVelocity(self.skeleton, self.motion, self.targetJointIdx)
+        #     # self.drawBody(self.kine_skel, self.kine_mot)
+        #     glPopMatrix()
             
-            self.drawBoxGlobal(self.targetPos[0],self.targetPos[1],self.targetPos[2])
-            glPopMatrix()
+        #     self.drawBoxGlobal(self.targetPos[0],self.targetPos[1],self.targetPos[2])
+        #     glPopMatrix()
 
 
         if self.skeleton is not None and self.playing:
@@ -471,7 +483,10 @@ class GlDrawer():
             self.curFrame %= self.motion.frames
 
         # dynamics
-        self.sim.testRender(self)
+        # glPushMatrix()
+        # self.setObjectColor(255,255,255)
+        # self.sim.testRender(self)
+        # glPopMatrix()
 
     def setTargetPos(self, targetPos):
         self.targetPos = np.array(targetPos, dtype = np.float64)

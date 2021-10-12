@@ -18,7 +18,7 @@ class Ui_MainWindow(object):
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
 
-        self.openGLWidget = QtGlWidget("bvhFiles/02_04_walk.bvh", label = self.label, slider = self.horizontalSlider, parent = self.centralwidget)
+        self.openGLWidget = QtGlWidget("bvhFiles/02_04_run.bvh", label = self.label, slider = self.horizontalSlider, parent = self.centralwidget)
         self.openGLWidget.setGeometry(QtCore.QRect(-1, -21, 721, 411))
         self.openGLWidget.setObjectName("openGLWidget")
         # self.openGLWidget.show()

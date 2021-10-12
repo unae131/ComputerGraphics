@@ -114,7 +114,7 @@ class Snake(Model):
                                             forces=torques)
         p.stepSimulation()
 
-    def getSinTargetPositions(self, dt = 1./360., wavePeriod = 1.5, waveLength = 4, waveAmplitude = 0.4):
+    def getSinTargetPositions(self, dt = 1./360., wavePeriod = 1.5, waveLength = 3, waveAmplitude = 0.4):
         segmentLength = self.nodeLength + self.gap
         scaleStart = 1.0
         waveFront = self.waveFront
